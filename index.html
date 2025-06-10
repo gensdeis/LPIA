@@ -414,13 +414,13 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui">
-            <!-- �뵆�젅�씠�뼱 �긽�깭 �뙣�꼸 -->
+            <!-- 플레이어 상태 패널 -->
             <div id="playerStats" class="ui-panel">
-                <h3>�뵆�젅�씠�뼱 �젙蹂�</h3>
-                <div>�젅踰�: <span id="playerLevel">1</span></div>
-                <div>�쟾�닾�젰: <span id="playerPower">100</span></div>
-                <div>諛⑹뼱�젰: <span id="playerDefense">5</span></div>
-                <div>怨⑤뱶: <span id="playerGold">0</span></div>
+                <h3>플레이어 정보</h3>
+                <div>레벨: <span id="playerLevel">1</span></div>
+                <div>전투력: <span id="playerPower">100</span></div>
+                <div>방어력: <span id="playerDefense">5</span></div>
+                <div>골드: <span id="playerGold">0</span></div>
                 
                 <div>HP: <span id="hpText">100/100 (100%)</span></div>
                 <div class="stat-bar">
@@ -443,34 +443,34 @@
                 </div>
                 
                 <div style="margin: 10px 0;">
-                    <h4 style="color: #e74c3c; margin: 5px 0;">�뒪�궗</h4>
+                    <h4 style="color: #e74c3c; margin: 5px 0;">스킬</h4>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="skill-btn" onclick="game.useSkill(1)" id="skill1" title="誘몄궗�씪 怨듦꺽 (25 MP)">
-                            �윓� <span id="skill1Cooldown"></span>
+                        <button class="skill-btn" onclick="game.useSkill(1)" id="skill1" title="미사일 공격 (25 MP)">
+                            🚀 <span id="skill1Cooldown"></span>
                         </button>
-                        <button class="skill-btn" onclick="game.useSkill(2)" id="skill2" title="�뿉�꼫吏� 諛⑹뼱留� (20 MP)">
-                            �윖∽툘 <span id="skill2Cooldown"></span>
+                        <button class="skill-btn" onclick="game.useSkill(2)" id="skill2" title="쉴드 (20 MP)">
+                            🛡️ <span id="skill2Cooldown"></span>
                         </button>
-                        <button class="skill-btn ultimate" onclick="game.useSkill(3)" id="skill3" title="�뻾�꽦�뙆愿� �젅�씠��� (60 MP)">
-                            �윊� <span id="skill3Cooldown"></span>
+                        <button class="skill-btn ultimate" onclick="game.useSkill(3)" id="skill3" title="행성 파괴 레이저 (60 MP)">
+                            ⚡ <span id="skill3Cooldown"></span>
                         </button>
                     </div>
                     <div style="font-size: 11px; color: #888; margin-top: 8px;">
-                        �윊� �엳�뱺 �뒪�궗: �넁 �넁 �넂 �넂 Space
+                        💡 숨겨진 스킬: ↑ ↑ ↓ ↓ Space
                     </div>
                 </div>
                 
                 <div style="margin: 10px 0;">
-                    <h4 style="color: #2ecc71; margin: 5px 0;">HP �룷�뀡</h4>
+                    <h4 style="color: #2ecc71; margin: 5px 0;">HP 포션</h4>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="potion-btn" onclick="usePotion('small')" title="�냼�삎 HP �룷�뀡">
-                            �윧� <span id="smallPotionCount">0</span>
+                        <button class="potion-btn" onclick="usePotion('small')" title="소형 HP 포션">
+                            🧪 <span id="smallPotionCount">0</span>
                         </button>
-                        <button class="potion-btn" onclick="usePotion('medium')" title="以묓삎 HP �룷�뀡">
-                            �윧� <span id="mediumPotionCount">0</span>
+                        <button class="potion-btn" onclick="usePotion('medium')" title="중형 HP 포션">
+                            🧪 <span id="mediumPotionCount">0</span>
                         </button>
-                        <button class="potion-btn" onclick="usePotion('large')" title="����삎 HP �룷�뀡">
-                            �윧� <span id="largePotionCount">0</span>
+                        <button class="potion-btn" onclick="usePotion('large')" title="대형 HP 포션">
+                            🧪 <span id="largePotionCount">0</span>
                         </button>
                     </div>
                     
@@ -487,98 +487,96 @@
                         <div style="display: flex; align-items: center; gap: 3px;">
                             <label style="font-size: 10px;">Priority:</label>
                             <select id="autoPotionPriority" onchange="updateAutoPotionPriority()" style="font-size: 10px;">
-                                <option value="small,medium,large">Small �넂 Medium �넂 Large</option>
-                                <option value="large,medium,small">Large �넂 Medium �넂 Small</option>
-                                <option value="medium,small,large">Medium �넂 Small �넂 Large</option>
+                                <option value="small,medium,large">Small → Medium → Large</option>
+                                <option value="large,medium,small">Large → Medium → Small</option>
+                                <option value="medium,small,large">Medium → Small → Large</option>
                             </select>
                         </div>
                     </div>
                 </div>
                 
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                    <button class="btn" onclick="showRanking()">�옲�궧 蹂닿린</button>
-                    <!-- 臾닿린 蹂�寃� 踰꾪듉 (臾닿린 �꽑�깮 �썑 �몴�떆) -->
+                    <button class="btn" onclick="showRanking()">랭킹 보기</button>
+                    <!-- 무기 변경 버튼 (무기 선택 후 표시) -->
                     <button class="btn" onclick="showWeaponSelector()" id="weaponChangeBtnInline" style="font-size: 11px; padding: 5px 8px; display: none;">
-                        <span id="currentWeaponIconInline">�슂截�</span> 臾닿린 蹂�寃�
+                        <span id="currentWeaponIconInline">⚔️</span> 무기 변경
                     </button>
                 </div>
                 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
-                    <h4 style="margin: 5px 0;">怨꾩젙 愿�由�</h4>
+                    <h4 style="margin: 5px 0;">계정 관리</h4>
                     <div id="accountInfo" style="font-size: 12px; margin-bottom: 10px;">
-                        濡쒓렇�씤�릺吏� �븡�쓬
+                        로그인하세요
                     </div>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="btn" onclick="showLoginModal()" id="loginButton" style="font-size: 11px; padding: 3px 6px;">濡쒓렇�씤</button>
-                        <button class="btn" onclick="logout()" id="logoutButton" style="font-size: 11px; padding: 3px 6px; display: none;">濡쒓렇�븘�썐</button>
-                        <button class="btn" onclick="resetGame()" style="font-size: 11px; padding: 3px 6px;">�떎�떆�븯湲�</button>
-                        <button class="btn" onclick="clearAllData()" style="font-size: 11px; padding: 3px 6px;">�뜲�씠�꽣 �궘�젣</button>
+                        <button class="btn" onclick="showLoginModal()" id="loginButton" style="font-size: 11px; padding: 3px 6px;">로그인</button>
+                        <button class="btn" onclick="logout()" id="logoutButton" style="font-size: 11px; padding: 3px 6px; display: none;">로그아웃</button>
+                        <button class="btn" onclick="resetGame()" style="font-size: 11px; padding: 3px 6px;">다시하기</button>
+                        <button class="btn" onclick="clearAllData()" style="font-size: 11px; padding: 3px 6px;">데이터 삭제</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 臾닿린 �꽑�깮 �뙣�꼸 -->
+            <!-- 무기 선택 패널 -->
             <div id="weaponSelector" class="ui-panel">
-                <h3>臾닿린 �꽑�깮</h3>
+                <h3>무기 선택</h3>
                 <div class="weapon-choice" onclick="selectWeaponType('melee')">
                     <input type="radio" name="weaponType" value="melee" id="meleeWeapon">
-                    <label for="meleeWeapon">�슂截� 洹쇱젒 臾닿린 (愿묒꽑寃�)</label>
+                    <label for="meleeWeapon">⚔️ 근접 무기 (광선검)</label>
                     <div class="weapon-stats">
-                        <div>怨좊뜲誘몄��, 洹쇱젒嫄곕━</div>
+                        <div>데미지, 근접거리</div>
                     </div>
                 </div>
                 <div class="weapon-choice" onclick="selectWeaponType('ranged')">
                     <input type="radio" name="weaponType" value="ranged" id="rangedWeapon">
-                    <label for="rangedWeapon">�윍� �썝嫄곕━ 臾닿린 (�젅�씠���珥�)</label>
+                    <label for="rangedWeapon">🔫 원거리 무기 (레이저총)</label>
                     <div class="weapon-stats">
-                        <div>紐낆쨷瑜�: <span id="rangedAccuracy">70%</span></div>
-                        <div>移섎챸���: <span id="rangedCritical">5%</span></div>
+                        <div>명중률: <span id="rangedAccuracy">70%</span></div>
+                        <div>치명타: <span id="rangedCritical">5%</span></div>
                     </div>
                 </div>
                 <div style="margin-top: 15px;">
-                    <button class="btn" id="confirmWeaponSelection" onclick="confirmWeaponSelection()" style="width: 100%; padding: 10px;">�꽑�깮�븯湲�</button>
+                    <button class="btn" id="confirmWeaponSelection" onclick="confirmWeaponSelection()" style="width: 100%; padding: 10px;">선택하기</button>
                 </div>
                 <div style="margin-top: 10px; font-size: 10px; color: #bbb;">
-                    �꽑�깮�븳 臾닿린留� �궗�슜�맗�땲�떎
+                    선택한 무기만 사용합니다
                 </div>
             </div>
 
-
-
-            <!-- ��섏뒪�듃 �뙣�꼸 -->
+            <!-- 퀘스트 패널 -->
             <div id="questPanel" class="ui-panel">
-                <h3>��섏뒪�듃</h3>
+                <h3>퀘스트</h3>
                 <div id="questList"></div>
             </div>
 
-            <!-- �씤踰ㅽ넗由� �뙣�꼸 -->
+            <!-- 인벤토리 패널 -->
             <div id="inventory" class="ui-panel">
-                <h3>�옣鍮�</h3>
+                <h3>장비</h3>
                 <div class="equipment-row">
-                    <span class="equipment-category">臾닿린:</span>
-                    <div class="equipment-slot" data-slot="lightsaber" title="愿묒꽑寃�" onclick="showEquipmentDetail('lightsaber')">�슂截�</div>
-                    <div class="equipment-slot" data-slot="laser" title="�젅�씠���珥�" onclick="showEquipmentDetail('laser')">�윍�</div>
+                    <span class="equipment-category">무기:</span>
+                    <div class="equipment-slot" data-slot="lightsaber" title="광선검" onclick="showEquipmentDetail('lightsaber')">⚔️</div>
+                    <div class="equipment-slot" data-slot="laser" title="레이저총" onclick="showEquipmentDetail('laser')">🔫</div>
                     
-                    <span class="equipment-category">諛⑹뼱援�:</span>
-                    <div class="equipment-slot" data-slot="helmet" title="癒몃━" onclick="showEquipmentDetail('helmet')">�썞截�</div>
-                    <div class="equipment-slot" data-slot="shoulder" title="�뼱源�" onclick="showEquipmentDetail('shoulder')">�윖∽툘</div>
-                    <div class="equipment-slot" data-slot="chest" title="�긽�쓽" onclick="showEquipmentDetail('chest')">�윉�</div>
-                    <div class="equipment-slot" data-slot="legs" title="�븯�쓽" onclick="showEquipmentDetail('legs')">�윉�</div>
-                    <div class="equipment-slot" data-slot="boots" title="�떊諛�" onclick="showEquipmentDetail('boots')">�윉�</div>
+                    <span class="equipment-category">방어구:</span>
+                    <div class="equipment-slot" data-slot="helmet" title="머리" onclick="showEquipmentDetail('helmet')">🪖</div>
+                    <div class="equipment-slot" data-slot="shoulder" title="어깨" onclick="showEquipmentDetail('shoulder')">🛡️</div>
+                    <div class="equipment-slot" data-slot="chest" title="상의" onclick="showEquipmentDetail('chest')">👕</div>
+                    <div class="equipment-slot" data-slot="legs" title="하의" onclick="showEquipmentDetail('legs')">👖</div>
+                    <div class="equipment-slot" data-slot="boots" title="신발" onclick="showEquipmentDetail('boots')">👢</div>
                 </div>
                 <div class="equipment-row">
-                    <span class="equipment-category">�옣�떊援�:</span>
-                    <div class="equipment-slot" data-slot="earring" title="洹�嫄몄씠" onclick="showEquipmentDetail('earring')">�윉�</div>
-                    <div class="equipment-slot" data-slot="necklace" title="紐⑷구�씠" onclick="showEquipmentDetail('necklace')">�윋�</div>
-                    <div class="equipment-slot" data-slot="ring" title="諛섏��" onclick="showEquipmentDetail('ring')">�윊�</div>
+                    <span class="equipment-category">장신구:</span>
+                    <div class="equipment-slot" data-slot="earring" title="귀걸이" onclick="showEquipmentDetail('earring')">💎</div>
+                    <div class="equipment-slot" data-slot="necklace" title="목걸이" onclick="showEquipmentDetail('necklace')">📿</div>
+                    <div class="equipment-slot" data-slot="ring" title="반지" onclick="showEquipmentDetail('ring')">💍</div>
                 </div>
             </div>
 
-            <!-- �뒪�뀒�씠吏� �젙蹂� �뙣�꼸 -->
+            <!-- 스테이지 정보 패널 -->
             <div id="stageInfo" class="ui-panel">
-                <h3>�뒪�뀒�씠吏� �젙蹂�</h3>
-                <div>�쁽�옱 �뒪�뀒�씠吏�: <span id="currentStage">1</span></div>
-                <div>�쁽�옱 �뻾�꽦: <span id="currentPlanet">�옉��� �뻾�꽦</span></div>
+                <h3>스테이지 정보</h3>
+                <div>현재 스테이지: <span id="currentStage">1</span></div>
+                <div>현재 행성: <span id="currentPlanet">작은 행성</span></div>
                 
                 <div>Boss HP: <span id="bossHpText">1000/1000 (100%)</span></div>
                 <div class="stat-bar">
@@ -586,126 +584,126 @@
                 </div>
                 
                 <div id="monsterInfo">
-                    <div>紐ъ뒪�꽣: <span id="currentMonster">�슦二� �뒳�씪�엫</span></div>
-                    <div>�젅踰�: <span id="monsterLevel">1</span></div>
+                    <div>몬스터: <span id="currentMonster">우주 슬라임</span></div>
+                    <div>레벨: <span id="monsterLevel">1</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- �옲�궧 紐⑤떖 -->
+        <!-- 랭킹 모달 -->
         <div id="rankingModal">
             <div class="modal-content">
-                <h2>�옲�궧</h2>
+                <h2>랭킹</h2>
                 <div>
-                    <button class="btn" onclick="showPowerRanking()">�쟾�닾�젰 �옲�궧</button>
-                    <button class="btn" onclick="showStageRanking()">�뒪�뀒�씠吏� �옲�궧</button>
-                    <button class="btn" onclick="showTimeRanking()">�뵆�젅�씠 �떆媛� �옲�궧</button>
+                    <button class="btn" onclick="showPowerRanking()">전투력 랭킹</button>
+                    <button class="btn" onclick="showStageRanking()">스테이지 랭킹</button>
+                    <button class="btn" onclick="showTimeRanking()">플레이 시간 랭킹</button>
                 </div>
                 <div id="rankingContent"></div>
-                <button class="btn" onclick="closeRanking()">�떕湲�</button>
+                <button class="btn" onclick="closeRanking()">닫기</button>
             </div>
         </div>
 
-        <!-- 濡쒓렇�씤/�쉶�썝媛��엯 紐⑤떖 -->
+        <!-- 로그인/회원가입 모달 -->
         <div id="loginModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
             <div class="modal-content" style="width: 300px; padding: 20px;">
-                <h2 id="loginTitle">濡쒓렇�씤</h2>
+                <h2 id="loginTitle">로그인</h2>
                 <div>
-                    <input type="text" id="loginId" placeholder="�븘�씠�뵒" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                    <input type="password" id="loginPw" placeholder="鍮꾨��踰덊샇" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="loginId" placeholder="아이디" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="password" id="loginPw" placeholder="비밀번호" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                     <div id="loginMessage" style="font-size: 12px; margin: 5px 0; color: #ff6666;"></div>
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn" onclick="login()" id="loginBtn">濡쒓렇�씤</button>
-                        <button class="btn" onclick="toggleRegisterMode()" id="toggleBtn">�쉶�썝媛��엯</button>
-                        <button class="btn" onclick="closeLoginModal()">痍⑥냼</button>
+                        <button class="btn" onclick="login()" id="loginBtn">로그인</button>
+                        <button class="btn" onclick="toggleRegisterMode()" id="toggleBtn">회원가입</button>
+                        <button class="btn" onclick="closeLoginModal()">취소</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 罹먮┃�꽣 �깮�꽦 紐⑤떖 -->
+        <!-- 캐릭터 생성 모달 -->
         <div id="characterModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
             <div class="modal-content" style="width: 400px; padding: 20px;">
-                <h2>罹먮┃�꽣 �깮�꽦</h2>
+                <h2>캐릭터 생성</h2>
                 <div>
                     <div style="margin: 15px 0;">
-                        <label>�땳�꽕�엫:</label>
-                        <input type="text" id="characterNickname" placeholder="罹먮┃�꽣 �땳�꽕�엫" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <label>닉네임:</label>
+                        <input type="text" id="characterNickname" placeholder="캐릭터 닉네임" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                     </div>
                     
                     <div style="margin: 15px 0;">
-                        <label>罹먮┃�꽣 �깋�긽:</label>
+                        <label>캐릭터 색상:</label>
                         <div style="display: flex; gap: 10px; margin: 5px 0;">
                             <div>
-                                <label style="font-size: 12px;">紐�:</label>
+                                <label style="font-size: 12px;">몸:</label>
                                 <input type="color" id="bodyColor" value="#4a90e2" style="width: 50px; height: 30px;">
                             </div>
                             <div>
-                                <label style="font-size: 12px;">�뿬硫�:</label>
+                                <label style="font-size: 12px;">헬멧:</label>
                                 <input type="color" id="helmetColor" value="#357abd" style="width: 50px; height: 30px;">
                             </div>
                             <div>
-                                <label style="font-size: 12px;">�옣鍮�:</label>
+                                <label style="font-size: 12px;">장비:</label>
                                 <input type="color" id="equipmentColor" value="#666666" style="width: 50px; height: 30px;">
                             </div>
                         </div>
                     </div>
                     
                     <div style="margin: 15px 0;">
-                        <label>誘몃━蹂닿린:</label>
+                        <label>미리보기:</label>
                         <canvas id="characterPreview" width="100" height="100" style="border: 1px solid #ccc; background: #000;"></canvas>
                     </div>
                     
                     <div id="characterMessage" style="font-size: 12px; margin: 5px 0; color: #ff6666;"></div>
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn" onclick="createCharacter()">�깮�꽦</button>
-                        <button class="btn" onclick="closeCharacterModal()">痍⑥냼</button>
+                        <button class="btn" onclick="createCharacter()">생성</button>
+                        <button class="btn" onclick="closeCharacterModal()">취소</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- �옣鍮� �젙蹂� 紐⑤떖 -->
+        <!-- 장비 정보 모달 -->
         <div id="equipmentModal">
             <div class="modal-content">
-                <h2 id="equipmentTitle">�옣鍮� �젙蹂�</h2>
+                <h2 id="equipmentTitle">장비 정보</h2>
                 <div id="equipmentInfo">
                     <div class="equipment-detail">
-                        <div class="equipment-icon-large" id="equipmentIconLarge">�윋�</div>
+                        <div class="equipment-icon-large" id="equipmentIconLarge">📿</div>
                         <div class="equipment-stats">
-                            <h3 id="equipmentName">�옣鍮� �뾾�쓬</h3>
-                            <p id="equipmentDescription">�옣鍮꾧�� �옣李⑸릺吏� �븡�븯�뒿�땲�떎.</p>
+                            <h3 id="equipmentName">장비 없음</h3>
+                            <p id="equipmentDescription">장비가 장착되지 않았습니다.</p>
                             <div class="stat-line">
-                                <span>�젅踰�:</span>
+                                <span>레벨:</span>
                                 <span id="equipmentLevel">-</span>
                             </div>
                             <div class="stat-line">
-                                <span>�쟾�닾�젰:</span>
+                                <span>전투력:</span>
                                 <span id="equipmentPower">-</span>
                             </div>
                             <div class="stat-line">
-                                <span>諛⑹뼱�젰:</span>
+                                <span>방어력:</span>
                                 <span id="equipmentDefense">-</span>
                             </div>
                             <div class="stat-line">
-                                <span>�벑湲�:</span>
+                                <span>등급:</span>
                                 <span id="equipmentRarity">-</span>
                             </div>
                             <div class="stat-line">
-                                <span>����엯:</span>
+                                <span>타입:</span>
                                 <span id="equipmentType">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <button class="btn" onclick="closeEquipmentModal()">�떕湲�</button>
+                <button class="btn" onclick="closeEquipmentModal()">닫기</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript �뙆�씪�뱾�쓣 �쓽議댁꽦 �닚�꽌���濡� 濡쒕뱶 -->
+    <!-- JavaScript 파일들을 의존성 순서대로 로드 -->
     
-    <!-- 1. 湲곕낯 �겢�옒�뒪�뱾 (�쓽議댁꽦 �뾾�쓬) -->
+    <!-- 1. 기본 클래스들 (의존성 없음) -->
     <script src="js/player.js"></script>
     <script src="js/equipment.js"></script>
     <script src="js/projectile.js"></script>
@@ -713,17 +711,17 @@
     <script src="js/potion.js"></script>
     <script src="js/quest.js"></script>
     
-    <!-- 2. �떆�뒪�뀥 �겢�옒�뒪�뱾 -->
+    <!-- 2. 시스템 클래스들 -->
     <script src="js/skill.js"></script>
     <script src="js/konami.js"></script>
     
-    <!-- 3. UI��� 湲곕뒫 �븿�닔�뱾 -->
+    <!-- 3. UI와 기능 함수들 -->
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/weapon.js"></script>
     <script src="js/rendering.js"></script>
     
-    <!-- 4. 硫붿씤 寃뚯엫 濡쒖쭅 (紐⑤뱺 �겢�옒�뒪��� �븿�닔�뱾 �궗�슜) -->
+    <!-- 4. 게임 로직 -->
     <script src="js/game.js"></script>
 </body>
 </html> 

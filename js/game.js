@@ -1,10 +1,5 @@
-@@ -0,0 +1,4060 @@
-// ==================== 도메인 엔티티 ====================
-// Player, Equipment, Projectile, Monster, Boss, HealthPotion, Quest 클래스들은 별도 파일로 분리됨
 
-// 모든 클래스들은 별도 파일로 분리됨
-
-// ==================== 게임 유스케이스 ====================
+class Equipment {
     constructor(name, type, level, power, slot = null) {
         this.name = name;
         this.type = type; // 'weapon', 'armor', 'accessory'
@@ -4059,4 +4054,3 @@ function showWeaponSelector() {
     // UI 업데이트
     updateWeaponSelector();
 }
-No newline at end of file
