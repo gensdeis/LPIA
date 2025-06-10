@@ -1,0 +1,354 @@
+@@ -0,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            margin: 10px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Little Prince Idle Adventure - 테스트</h1>
+    
+    <div class="test-section">
+        <h2>플레이어 테스트</h2>
+        <button onclick="testPlayer()">플레이어 기능 테스트</button>
+        <div id="playerTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>몬스터 테스트</h2>
+        <button onclick="testMonster()">몬스터 기능 테스트</button>
+        <div id="monsterTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>퀘스트 테스트</h2>
+        <button onclick="testQuest()">퀘스트 기능 테스트</button>
+        <div id="questTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>장비 테스트</h2>
+        <button onclick="testEquipment()">장비 기능 테스트</button>
+        <div id="equipmentTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>게임 통합 테스트</h2>
+        <button onclick="testGameIntegration()">게임 통합 테스트</button>
+        <div id="gameTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>실제 게임 실행</h2>
+        <button onclick="openGame()">게임 실행하기</button>
+    </div>
+
+    <script>
+        // 게임 코드 임포트 (실제로는 별도 파일에서 로드)
+        // 여기서는 간단한 테스트를 위해 기본 클래스들만 재정의
+
+        class Player {
+            constructor() {
+                this.level = 1;
+                this.experience = 0;
+                this.experienceToNext = 100;
+                this.gold = 0;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.baseAttack = 10;
+                this.baseDefense = 5;
+                this.equipment = {
+                    lightsaber: null,
+                    laser: null,
+                    helmet: null,
+                    shoulder: null,
+                    chest: null,
+                    legs: null,
+                    boots: null,
+                    earring: null,
+                    necklace: null,
+                    ring: null
+                };
+            }
+
+            getTotalPower() {
+                let power = this.level * 10 + this.baseAttack;
+                Object.values(this.equipment).forEach(item => {
+                    if (item) power += item.power;
+                });
+                return power;
+            }
+
+            gainExperience(exp) {
+                this.experience += exp;
+                while (this.experience >= this.experienceToNext) {
+                    this.levelUp();
+                }
+            }
+
+            levelUp() {
+                this.experience -= this.experienceToNext;
+                this.level++;
+                this.experienceToNext = Math.floor(this.experienceToNext * 1.2);
+                this.maxHp += 20;
+                this.hp = this.maxHp;
+                this.baseAttack += 2;
+                this.baseDefense += 1;
+            }
+
+            equipItem(item, slot) {
+                if (this.equipment[slot] !== undefined) {
+                    this.equipment[slot] = item;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        class Equipment {
+            constructor(name, type, level, power) {
+                this.name = name;
+                this.type = type;
+                this.level = level;
+                this.power = power;
+            }
+        }
+
+        class Monster {
+            constructor(name, level, stage) {
+                this.name = name;
+                this.level = level;
+                this.stage = stage;
+                this.maxHp = level * 50 + stage * 10;
+                this.hp = this.maxHp;
+                this.attack = level * 5 + stage * 2;
+                this.defense = level * 2 + stage;
+            }
+
+            takeDamage(damage) {
+                const actualDamage = Math.max(1, damage - this.defense);
+                this.hp -= actualDamage;
+                return this.hp <= 0;
+            }
+        }
+
+        class Quest {
+            constructor(id, description, target, current = 0) {
+                this.id = id;
+                this.description = description;
+                this.target = target;
+                this.current = current;
+                this.completed = false;
+            }
+
+            updateProgress(amount) {
+                this.current = Math.min(this.current + amount, this.target);
+                if (this.current >= this.target) {
+                    this.completed = true;
+                }
+            }
+        }
+
+        // 테스트 함수들
+        function showResult(containerId, testName, passed, message) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+            resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? '성공' : '실패'} - ${message}`;
+            container.appendChild(resultDiv);
+        }
+
+        function testPlayer() {
+            const container = document.getElementById('playerTests');
+            container.innerHTML = '';
+
+            // 플레이어 생성 테스트
+            const player = new Player();
+            showResult('playerTests', '플레이어 생성', 
+                player.level === 1 && player.hp === 100, 
+                '초기 레벨과 HP 확인');
+
+            // 경험치 획득 테스트
+            const initialLevel = player.level;
+            player.gainExperience(100);
+            showResult('playerTests', '레벨업', 
+                player.level > initialLevel, 
+                '경험치 100 획득 후 레벨업 확인');
+
+            // 전투력 계산 테스트
+            const basePower = player.getTotalPower();
+            const equipment = new Equipment('테스트 검', 'weapon', 1, 50);
+            player.equipItem(equipment, 'lightsaber');
+            showResult('playerTests', '장비 장착', 
+                player.getTotalPower() > basePower, 
+                '장비 장착 후 전투력 증가 확인');
+        }
+
+        function testMonster() {
+            const container = document.getElementById('monsterTests');
+            container.innerHTML = '';
+
+            // 몬스터 생성 테스트
+            const monster = new Monster('테스트 몬스터', 5, 1);
+            showResult('monsterTests', '몬스터 생성', 
+                monster.hp > 0 && monster.attack > 0, 
+                'HP와 공격력이 설정됨');
+
+            // 데미지 테스트
+            const initialHp = monster.hp;
+            const isDead = monster.takeDamage(100);
+            showResult('monsterTests', '데미지 처리', 
+                monster.hp < initialHp, 
+                '데미지를 받아 HP 감소');
+
+            // 사망 테스트
+            const weakMonster = new Monster('약한 몬스터', 1, 1);
+            const killed = weakMonster.takeDamage(1000);
+            showResult('monsterTests', '몬스터 사망', 
+                killed && weakMonster.hp <= 0, 
+                '충분한 데미지로 몬스터 사망');
+        }
+
+        function testQuest() {
+            const container = document.getElementById('questTests');
+            container.innerHTML = '';
+
+            // 퀘스트 생성 테스트
+            const quest = new Quest(1, '테스트 퀘스트', 10);
+            showResult('questTests', '퀘스트 생성', 
+                quest.target === 10 && quest.current === 0, 
+                '목표치와 현재 진행도 설정됨');
+
+            // 진행도 업데이트 테스트
+            quest.updateProgress(5);
+            showResult('questTests', '진행도 업데이트', 
+                quest.current === 5 && !quest.completed, 
+                '진행도 5로 업데이트, 아직 미완료');
+
+            // 퀘스트 완료 테스트
+            quest.updateProgress(10);
+            showResult('questTests', '퀘스트 완료', 
+                quest.completed && quest.current === 10, 
+                '목표 달성으로 퀘스트 완료');
+        }
+
+        function testEquipment() {
+            const container = document.getElementById('equipmentTests');
+            container.innerHTML = '';
+
+            // 장비 생성 테스트
+            const equipment = new Equipment('마법검', 'weapon', 5, 100);
+            showResult('equipmentTests', '장비 생성', 
+                equipment.name === '마법검' && equipment.power === 100, 
+                '장비 속성이 올바르게 설정됨');
+
+            // 장비 장착 테스트
+            const player = new Player();
+            const equipped = player.equipItem(equipment, 'lightsaber');
+            showResult('equipmentTests', '장비 장착', 
+                equipped && player.equipment.lightsaber === equipment, 
+                '장비가 올바른 슬롯에 장착됨');
+
+            // 잘못된 슬롯 테스트
+            const failedEquip = player.equipItem(equipment, 'invalidSlot');
+            showResult('equipmentTests', '잘못된 슬롯', 
+                !failedEquip, 
+                '존재하지 않는 슬롯에 장착 시도 시 실패');
+        }
+
+        function testGameIntegration() {
+            const container = document.getElementById('gameTests');
+            container.innerHTML = '';
+
+            // 통합 시나리오: 플레이어가 몬스터를 잡고 성장하는 과정
+            const player = new Player();
+            const monster = new Monster('테스트 몬스터', 1, 1);
+            const quest = new Quest(1, '몬스터 처치', 1);
+
+            // 전투 시뮬레이션
+            const initialExp = player.experience;
+            const playerDamage = player.getTotalPower();
+            const monsterKilled = monster.takeDamage(playerDamage);
+
+            if (monsterKilled) {
+                player.gainExperience(monster.level * 10);
+                quest.updateProgress(1);
+            }
+
+            showResult('gameTests', '전투 시스템', 
+                monsterKilled, 
+                '플레이어가 몬스터를 처치함');
+
+            showResult('gameTests', '성장 시스템', 
+                player.experience > initialExp, 
+                '몬스터 처치 후 경험치 획득');
+
+            showResult('gameTests', '퀘스트 시스템', 
+                quest.completed, 
+                '몬스터 처치로 퀘스트 완료');
+
+            // 장비 드롭 시뮬레이션
+            const equipment = new Equipment('드롭 장비', 'weapon', 2, 20);
+            const equipBefore = player.getTotalPower();
+            player.equipItem(equipment, 'lightsaber');
+            const equipAfter = player.getTotalPower();
+
+            showResult('gameTests', '장비 시스템', 
+                equipAfter > equipBefore, 
+                '장비 장착으로 전투력 증가');
+        }
+
+        function openGame() {
+            window.open('index.html', '_blank');
+        }
+
+        // 페이지 로드 시 환영 메시지
+        window.addEventListener('load', () => {
+            console.log('Little Prince Idle Adventure 테스트 페이지가 로드되었습니다.');
+        });
+    </script>
+</body>
+</html> 
+No newline at end of file

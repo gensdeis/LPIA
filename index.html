@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Little Prince Idle Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .ui-panel {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            padding: 10px;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        #playerStats {
+            top: 20px;
+            left: 20px;
+            min-width: 200px;
+        }
+
+        #questPanel {
+            top: 20px;
+            right: 20px;
+            min-width: 250px;
+        }
+
+        #inventory {
+            bottom: 20px;
+            left: 20px;
+            min-width: 300px;
+        }
+
+        #weaponSelector {
+            top: 200px;
+            left: 20px;
+            min-width: 220px;
+        }
+
+        .weapon-choice {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .weapon-choice:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .weapon-choice.selected {
+            background: rgba(74, 144, 226, 0.3);
+            border: 2px solid #4a90e2;
+        }
+
+        .weapon-choice input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .weapon-stats {
+            font-size: 10px;
+            color: #bbb;
+            margin-left: 20px;
+        }
+
+        #stageInfo {
+            bottom: 20px;
+            right: 20px;
+            min-width: 200px;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .hp-bar { background: #e74c3c; }
+        .mp-bar { background: #3498db; }
+        .shield-bar { background: #f39c12; }
+        .exp-bar { background: #2ecc71; }
+        .boss-bar { background: #9b59b6; }
+        
+        .skill-btn {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 12px;
+            position: relative;
+            min-width: 50px;
+        }
+        
+        .skill-btn:hover:not(:disabled) {
+            background: #9b59b6;
+        }
+        
+        .skill-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .skill-btn.ultimate {
+            background: #e74c3c;
+            border: 2px solid #f39c12;
+        }
+        
+        .skill-btn.ultimate:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .quest-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            border-left: 3px solid #4a90e2;
+        }
+
+        .quest-completed {
+            border-left-color: #27ae60;
+            background: rgba(39, 174, 96, 0.2);
+        }
+
+        .equipment-slot {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #4a90e2;
+            border-radius: 4px;
+            margin: 2px;
+            cursor: pointer;
+            position: relative;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .equipment-slot.equipped {
+            background: rgba(74, 144, 226, 0.3);
+            border-color: #27ae60;
+        }
+
+        .equipment-icon {
+            font-size: 16px;
+        }
+
+        .damage-number {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff6b6b;
+            pointer-events: none;
+            animation: damageFloat 1s ease-out forwards;
+        }
+
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+
+        .combat-effect {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #4a90e2;
+            border-radius: 50%;
+            animation: projectile 0.5s ease-out forwards;
+        }
+
+        @keyframes projectile {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(2);
+            }
+        }
+
+        .btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #357abd;
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #rankingModal, #equipmentModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .stars {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .equipment-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            flex-wrap: wrap;
+        }
+
+        .equipment-category {
+            font-size: 12px;
+            color: #4a90e2;
+            font-weight: bold;
+            margin-right: 8px;
+            min-width: 50px;
+        }
+
+        .equipment-detail {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .equipment-icon-large {
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: rgba(74, 144, 226, 0.2);
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+        }
+
+        .equipment-stats {
+            flex: 1;
+        }
+
+        .equipment-stats h3 {
+            margin: 0 0 10px 0;
+            color: #4a90e2;
+        }
+
+        .equipment-stats p {
+            margin: 0 0 15px 0;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-line span:first-child {
+            color: #aaa;
+        }
+
+        .stat-line span:last-child {
+            color: white;
+            font-weight: bold;
+        }
+
+        .rarity-common { color: #ffffff; }
+        .rarity-rare { color: #3498db; }
+        .rarity-epic { color: #9b59b6; }
+        .rarity-legendary { color: #f39c12; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .potion-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            min-width: 40px;
+            transition: all 0.2s;
+        }
+
+        .potion-btn:hover {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            transform: scale(1.05);
+        }
+
+        .potion-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <!-- �뵆�젅�씠�뼱 �긽�깭 �뙣�꼸 -->
+            <div id="playerStats" class="ui-panel">
+                <h3>�뵆�젅�씠�뼱 �젙蹂�</h3>
+                <div>�젅踰�: <span id="playerLevel">1</span></div>
+                <div>�쟾�닾�젰: <span id="playerPower">100</span></div>
+                <div>諛⑹뼱�젰: <span id="playerDefense">5</span></div>
+                <div>怨⑤뱶: <span id="playerGold">0</span></div>
+                
+                <div>HP: <span id="hpText">100/100 (100%)</span></div>
+                <div class="stat-bar">
+                    <div class="stat-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                </div>
+                
+                <div>MP: <span id="mpText">100/100 (100%)</span></div>
+                <div class="stat-bar">
+                    <div class="stat-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                </div>
+                
+                <div id="shieldDisplay" style="display: none;">Shield: <span id="shieldText">0/0 (0%)</span></div>
+                <div class="stat-bar" id="shieldBarContainer" style="display: none;">
+                    <div class="stat-fill shield-bar" id="shieldBar" style="width: 0%"></div>
+                </div>
+                
+                <div>EXP: <span id="expText">0/100 (0%)</span></div>
+                <div class="stat-bar">
+                    <div class="stat-fill exp-bar" id="expBar" style="width: 0%"></div>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <h4 style="color: #e74c3c; margin: 5px 0;">�뒪�궗</h4>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="skill-btn" onclick="game.useSkill(1)" id="skill1" title="誘몄궗�씪 怨듦꺽 (25 MP)">
+                            �윓� <span id="skill1Cooldown"></span>
+                        </button>
+                        <button class="skill-btn" onclick="game.useSkill(2)" id="skill2" title="�뿉�꼫吏� 諛⑹뼱留� (20 MP)">
+                            �윖∽툘 <span id="skill2Cooldown"></span>
+                        </button>
+                        <button class="skill-btn ultimate" onclick="game.useSkill(3)" id="skill3" title="�뻾�꽦�뙆愿� �젅�씠��� (60 MP)">
+                            �윊� <span id="skill3Cooldown"></span>
+                        </button>
+                    </div>
+                    <div style="font-size: 11px; color: #888; margin-top: 8px;">
+                        �윊� �엳�뱺 �뒪�궗: �넁 �넁 �넂 �넂 Space
+                    </div>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <h4 style="color: #2ecc71; margin: 5px 0;">HP �룷�뀡</h4>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="potion-btn" onclick="usePotion('small')" title="�냼�삎 HP �룷�뀡">
+                            �윧� <span id="smallPotionCount">0</span>
+                        </button>
+                        <button class="potion-btn" onclick="usePotion('medium')" title="以묓삎 HP �룷�뀡">
+                            �윧� <span id="mediumPotionCount">0</span>
+                        </button>
+                        <button class="potion-btn" onclick="usePotion('large')" title="����삎 HP �룷�뀡">
+                            �윧� <span id="largePotionCount">0</span>
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+                            <input type="checkbox" id="autoPotionEnabled" onchange="toggleAutoPotion()">
+                            <label for="autoPotionEnabled" style="font-size: 12px;">Auto Potion</label>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+                            <label style="font-size: 10px;">Trigger:</label>
+                            <input type="range" id="autoPotionPercent" min="10" max="80" value="50" style="width: 60px;" onchange="updateAutoPotionPercent(this.value)">
+                            <span id="autoPotionPercentText" style="font-size: 10px;">50%</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 3px;">
+                            <label style="font-size: 10px;">Priority:</label>
+                            <select id="autoPotionPriority" onchange="updateAutoPotionPriority()" style="font-size: 10px;">
+                                <option value="small,medium,large">Small �넂 Medium �넂 Large</option>
+                                <option value="large,medium,small">Large �넂 Medium �넂 Small</option>
+                                <option value="medium,small,large">Medium �넂 Small �넂 Large</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button class="btn" onclick="showRanking()">�옲�궧 蹂닿린</button>
+                    <!-- 臾닿린 蹂�寃� 踰꾪듉 (臾닿린 �꽑�깮 �썑 �몴�떆) -->
+                    <button class="btn" onclick="showWeaponSelector()" id="weaponChangeBtnInline" style="font-size: 11px; padding: 5px 8px; display: none;">
+                        <span id="currentWeaponIconInline">�슂截�</span> 臾닿린 蹂�寃�
+                    </button>
+                </div>
+                
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <h4 style="margin: 5px 0;">怨꾩젙 愿�由�</h4>
+                    <div id="accountInfo" style="font-size: 12px; margin-bottom: 10px;">
+                        濡쒓렇�씤�릺吏� �븡�쓬
+                    </div>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="btn" onclick="showLoginModal()" id="loginButton" style="font-size: 11px; padding: 3px 6px;">濡쒓렇�씤</button>
+                        <button class="btn" onclick="logout()" id="logoutButton" style="font-size: 11px; padding: 3px 6px; display: none;">濡쒓렇�븘�썐</button>
+                        <button class="btn" onclick="resetGame()" style="font-size: 11px; padding: 3px 6px;">�떎�떆�븯湲�</button>
+                        <button class="btn" onclick="clearAllData()" style="font-size: 11px; padding: 3px 6px;">�뜲�씠�꽣 �궘�젣</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 臾닿린 �꽑�깮 �뙣�꼸 -->
+            <div id="weaponSelector" class="ui-panel">
+                <h3>臾닿린 �꽑�깮</h3>
+                <div class="weapon-choice" onclick="selectWeaponType('melee')">
+                    <input type="radio" name="weaponType" value="melee" id="meleeWeapon">
+                    <label for="meleeWeapon">�슂截� 洹쇱젒 臾닿린 (愿묒꽑寃�)</label>
+                    <div class="weapon-stats">
+                        <div>怨좊뜲誘몄��, 洹쇱젒嫄곕━</div>
+                    </div>
+                </div>
+                <div class="weapon-choice" onclick="selectWeaponType('ranged')">
+                    <input type="radio" name="weaponType" value="ranged" id="rangedWeapon">
+                    <label for="rangedWeapon">�윍� �썝嫄곕━ 臾닿린 (�젅�씠���珥�)</label>
+                    <div class="weapon-stats">
+                        <div>紐낆쨷瑜�: <span id="rangedAccuracy">70%</span></div>
+                        <div>移섎챸���: <span id="rangedCritical">5%</span></div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" id="confirmWeaponSelection" onclick="confirmWeaponSelection()" style="width: 100%; padding: 10px;">�꽑�깮�븯湲�</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 10px; color: #bbb;">
+                    �꽑�깮�븳 臾닿린留� �궗�슜�맗�땲�떎
+                </div>
+            </div>
+
+
+
+            <!-- ��섏뒪�듃 �뙣�꼸 -->
+            <div id="questPanel" class="ui-panel">
+                <h3>��섏뒪�듃</h3>
+                <div id="questList"></div>
+            </div>
+
+            <!-- �씤踰ㅽ넗由� �뙣�꼸 -->
+            <div id="inventory" class="ui-panel">
+                <h3>�옣鍮�</h3>
+                <div class="equipment-row">
+                    <span class="equipment-category">臾닿린:</span>
+                    <div class="equipment-slot" data-slot="lightsaber" title="愿묒꽑寃�" onclick="showEquipmentDetail('lightsaber')">�슂截�</div>
+                    <div class="equipment-slot" data-slot="laser" title="�젅�씠���珥�" onclick="showEquipmentDetail('laser')">�윍�</div>
+                    
+                    <span class="equipment-category">諛⑹뼱援�:</span>
+                    <div class="equipment-slot" data-slot="helmet" title="癒몃━" onclick="showEquipmentDetail('helmet')">�썞截�</div>
+                    <div class="equipment-slot" data-slot="shoulder" title="�뼱源�" onclick="showEquipmentDetail('shoulder')">�윖∽툘</div>
+                    <div class="equipment-slot" data-slot="chest" title="�긽�쓽" onclick="showEquipmentDetail('chest')">�윉�</div>
+                    <div class="equipment-slot" data-slot="legs" title="�븯�쓽" onclick="showEquipmentDetail('legs')">�윉�</div>
+                    <div class="equipment-slot" data-slot="boots" title="�떊諛�" onclick="showEquipmentDetail('boots')">�윉�</div>
+                </div>
+                <div class="equipment-row">
+                    <span class="equipment-category">�옣�떊援�:</span>
+                    <div class="equipment-slot" data-slot="earring" title="洹�嫄몄씠" onclick="showEquipmentDetail('earring')">�윉�</div>
+                    <div class="equipment-slot" data-slot="necklace" title="紐⑷구�씠" onclick="showEquipmentDetail('necklace')">�윋�</div>
+                    <div class="equipment-slot" data-slot="ring" title="諛섏��" onclick="showEquipmentDetail('ring')">�윊�</div>
+                </div>
+            </div>
+
+            <!-- �뒪�뀒�씠吏� �젙蹂� �뙣�꼸 -->
+            <div id="stageInfo" class="ui-panel">
+                <h3>�뒪�뀒�씠吏� �젙蹂�</h3>
+                <div>�쁽�옱 �뒪�뀒�씠吏�: <span id="currentStage">1</span></div>
+                <div>�쁽�옱 �뻾�꽦: <span id="currentPlanet">�옉��� �뻾�꽦</span></div>
+                
+                <div>Boss HP: <span id="bossHpText">1000/1000 (100%)</span></div>
+                <div class="stat-bar">
+                    <div class="stat-fill boss-bar" id="bossHpBar" style="width: 100%"></div>
+                </div>
+                
+                <div id="monsterInfo">
+                    <div>紐ъ뒪�꽣: <span id="currentMonster">�슦二� �뒳�씪�엫</span></div>
+                    <div>�젅踰�: <span id="monsterLevel">1</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- �옲�궧 紐⑤떖 -->
+        <div id="rankingModal">
+            <div class="modal-content">
+                <h2>�옲�궧</h2>
+                <div>
+                    <button class="btn" onclick="showPowerRanking()">�쟾�닾�젰 �옲�궧</button>
+                    <button class="btn" onclick="showStageRanking()">�뒪�뀒�씠吏� �옲�궧</button>
+                    <button class="btn" onclick="showTimeRanking()">�뵆�젅�씠 �떆媛� �옲�궧</button>
+                </div>
+                <div id="rankingContent"></div>
+                <button class="btn" onclick="closeRanking()">�떕湲�</button>
+            </div>
+        </div>
+
+        <!-- 濡쒓렇�씤/�쉶�썝媛��엯 紐⑤떖 -->
+        <div id="loginModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div class="modal-content" style="width: 300px; padding: 20px;">
+                <h2 id="loginTitle">濡쒓렇�씤</h2>
+                <div>
+                    <input type="text" id="loginId" placeholder="�븘�씠�뵒" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="password" id="loginPw" placeholder="鍮꾨��踰덊샇" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div id="loginMessage" style="font-size: 12px; margin: 5px 0; color: #ff6666;"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn" onclick="login()" id="loginBtn">濡쒓렇�씤</button>
+                        <button class="btn" onclick="toggleRegisterMode()" id="toggleBtn">�쉶�썝媛��엯</button>
+                        <button class="btn" onclick="closeLoginModal()">痍⑥냼</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 罹먮┃�꽣 �깮�꽦 紐⑤떖 -->
+        <div id="characterModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div class="modal-content" style="width: 400px; padding: 20px;">
+                <h2>罹먮┃�꽣 �깮�꽦</h2>
+                <div>
+                    <div style="margin: 15px 0;">
+                        <label>�땳�꽕�엫:</label>
+                        <input type="text" id="characterNickname" placeholder="罹먮┃�꽣 �땳�꽕�엫" style="width: 100%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label>罹먮┃�꽣 �깋�긽:</label>
+                        <div style="display: flex; gap: 10px; margin: 5px 0;">
+                            <div>
+                                <label style="font-size: 12px;">紐�:</label>
+                                <input type="color" id="bodyColor" value="#4a90e2" style="width: 50px; height: 30px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px;">�뿬硫�:</label>
+                                <input type="color" id="helmetColor" value="#357abd" style="width: 50px; height: 30px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px;">�옣鍮�:</label>
+                                <input type="color" id="equipmentColor" value="#666666" style="width: 50px; height: 30px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label>誘몃━蹂닿린:</label>
+                        <canvas id="characterPreview" width="100" height="100" style="border: 1px solid #ccc; background: #000;"></canvas>
+                    </div>
+                    
+                    <div id="characterMessage" style="font-size: 12px; margin: 5px 0; color: #ff6666;"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn" onclick="createCharacter()">�깮�꽦</button>
+                        <button class="btn" onclick="closeCharacterModal()">痍⑥냼</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- �옣鍮� �젙蹂� 紐⑤떖 -->
+        <div id="equipmentModal">
+            <div class="modal-content">
+                <h2 id="equipmentTitle">�옣鍮� �젙蹂�</h2>
+                <div id="equipmentInfo">
+                    <div class="equipment-detail">
+                        <div class="equipment-icon-large" id="equipmentIconLarge">�윋�</div>
+                        <div class="equipment-stats">
+                            <h3 id="equipmentName">�옣鍮� �뾾�쓬</h3>
+                            <p id="equipmentDescription">�옣鍮꾧�� �옣李⑸릺吏� �븡�븯�뒿�땲�떎.</p>
+                            <div class="stat-line">
+                                <span>�젅踰�:</span>
+                                <span id="equipmentLevel">-</span>
+                            </div>
+                            <div class="stat-line">
+                                <span>�쟾�닾�젰:</span>
+                                <span id="equipmentPower">-</span>
+                            </div>
+                            <div class="stat-line">
+                                <span>諛⑹뼱�젰:</span>
+                                <span id="equipmentDefense">-</span>
+                            </div>
+                            <div class="stat-line">
+                                <span>�벑湲�:</span>
+                                <span id="equipmentRarity">-</span>
+                            </div>
+                            <div class="stat-line">
+                                <span>����엯:</span>
+                                <span id="equipmentType">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" onclick="closeEquipmentModal()">�떕湲�</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript �뙆�씪�뱾�쓣 �쓽議댁꽦 �닚�꽌���濡� 濡쒕뱶 -->
+    
+    <!-- 1. 湲곕낯 �겢�옒�뒪�뱾 (�쓽議댁꽦 �뾾�쓬) -->
+    <script src="js/player.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/projectile.js"></script>
+    <script src="js/monster.js"></script>
+    <script src="js/potion.js"></script>
+    <script src="js/quest.js"></script>
+    
+    <!-- 2. �떆�뒪�뀥 �겢�옒�뒪�뱾 -->
+    <script src="js/skill.js"></script>
+    <script src="js/konami.js"></script>
+    
+    <!-- 3. UI��� 湲곕뒫 �븿�닔�뱾 -->
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/rendering.js"></script>
+    
+    <!-- 4. 硫붿씤 寃뚯엫 濡쒖쭅 (紐⑤뱺 �겢�옒�뒪��� �븿�닔�뱾 �궗�슜) -->
+    <script src="js/game.js"></script>
+</body>
+</html> 
