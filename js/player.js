@@ -42,7 +42,7 @@ class Player {
         };
         
         // 무기 선택 시스템
-        this.selectedWeaponType = 'melee'; // 'melee' 또는 'ranged'
+        this.selectedWeaponType = null; // 'melee' 또는 'ranged' - 처음에는 선택 안됨
     }
 
     getTotalPower() {

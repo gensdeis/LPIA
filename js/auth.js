@@ -15,7 +15,9 @@ function closeLoginModal() {
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('loginId').value = '';
     document.getElementById('loginPw').value = '';
-    document.getElementById('loginMessage').textContent = '';
+    const messageEl = document.getElementById('loginMessage');
+    messageEl.textContent = '';
+    messageEl.style.color = '#ff6666'; // 기본 색상으로 리셋
     isRegisterMode = false;
     updateLoginModal();
 }
@@ -62,9 +64,7 @@ function logout() {
         saveUserGameData(currentUser);
         currentUser = null;
         updateAccountInfo();
-        if (typeof showNotification === 'function') {
             showNotification('로그아웃되었습니다.', 'info');
-        }
     }
 }
 
@@ -150,18 +150,23 @@ function loadUserGameData(userId) {
         if (typeof updatePotionUI === 'function') {
             updatePotionUI();
         }
-        if (typeof checkWeaponSelectionState === 'function') {
-            checkWeaponSelectionState();
-        }
         
-        if (typeof showNotification === 'function') {
-            showNotification('게임 데이터를 불러왔습니다.', 'success');
-        }
+        // 무기가 선택되어 있으면 무기 패널 숨기기
+        setTimeout(() => {
+            if (game.player && game.player.selectedWeaponType) {
+                hideWeaponSelector();
+            }
+        }, 100);
+        
+        showNotification('게임 데이터를 불러왔습니다.', 'success');
     } else {
         // 새 게임 시작
-        if (typeof showNotification === 'function') {
-            showNotification('새 게임을 시작합니다.', 'info');
-        }
+        showNotification('새 게임을 시작합니다.', 'info');
+        
+        // 새 게임에서는 무기 선택 필요
+        setTimeout(() => {
+                    checkWeaponSelectionState();
+        }, 500);
     }
 }
 
@@ -176,7 +181,7 @@ function register(id, pw) {
         return;
     }
     
-    // 닉네임 중복 체크
+    // 닉네임 중복 체크 (아이디가 닉네임으로 사용될 때만)
     if (isNicknameTaken(id)) {
         messageEl.textContent = '이미 사용 중인 닉네임입니다.';
         return;
@@ -190,18 +195,23 @@ function register(id, pw) {
     };
     
     localStorage.setItem(`user_${id}`, JSON.stringify(userData));
-    addUsedNickname(id);
     
-    messageEl.textContent = '회원가입이 완료되었습니다. 로그인해주세요.';
+    messageEl.textContent = '회원가입 완료! 캐릭터를 생성해주세요.';
     messageEl.style.color = '#27ae60';
     
-    // 자동으로 로그인 모드로 전환
+    // 자동 로그인 처리
     setTimeout(() => {
-        isRegisterMode = false;
-        updateLoginModal();
-        messageEl.textContent = '';
-        messageEl.style.color = '#ff6666';
-    }, 2000);
+        console.log('Starting auto-login process for:', id); // 디버깅용
+        currentUser = id;
+        updateAccountInfo();
+        closeLoginModal();
+        
+        // 새 사용자이므로 게임 초기화 없이 바로 캐릭터 생성 모달 표시
+        console.log('About to show character modal for new user'); // 디버깅용
+        showCharacterModal();
+        console.log('Character modal called'); // 디버깅용
+        showNotification(`${id}님 환영합니다! 캐릭터를 생성해주세요.`, 'success');
+    }, 1000);
 }
 
 function loginUser(id, pw) {
@@ -225,11 +235,22 @@ function loginUser(id, pw) {
     updateAccountInfo();
     closeLoginModal();
     
+    // 게임이 아직 초기화되지 않았다면 초기화
+    if (!game) {
+        initGame();
+    }
+    
     // 캐릭터 정보가 없으면 캐릭터 생성 모달 표시
     const characterData = localStorage.getItem(`character_${id}`);
+    console.log('Character data for user', id, ':', characterData); // 디버깅용
+    
     if (!characterData) {
-        showCharacterModal();
+        console.log('No character found, showing character modal'); // 디버깅용
+        setTimeout(() => {
+            showCharacterModal();
+        }, 100);
     } else {
+        console.log('Character found, loading game data'); // 디버깅용
         // 기존 캐릭터 정보 로드
         const character = JSON.parse(characterData);
         if (game && game.player) {
@@ -240,21 +261,53 @@ function loginUser(id, pw) {
         loadUserGameData(id);
     }
     
-    if (typeof showNotification === 'function') {
-        showNotification(`${id}님, 환영합니다!`, 'success');
-    }
+    showNotification(`${id}님, 환영합니다!`, 'success');
 }
 
 // 캐릭터 생성 관련 함수들
 function showCharacterModal() {
-    document.getElementById('characterModal').style.display = 'flex';
+    console.log('showCharacterModal() called'); // 디버깅용
+    
+    const modal = document.getElementById('characterModal');
+    console.log('Character modal element:', modal); // 디버깅용
+    
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('Character modal display set to flex'); // 디버깅용
+    } else {
+        console.error('Character modal element not found!'); // 디버깅용
+        return;
+    }
+    
+    // 색상 선택기에 이벤트 리스너 추가
+    document.getElementById('bodyColor').addEventListener('input', updateCharacterPreview);
+    document.getElementById('helmetColor').addEventListener('input', updateCharacterPreview);
+    document.getElementById('equipmentColor').addEventListener('input', updateCharacterPreview);
+    
     updateCharacterPreview();
+    console.log('Character modal setup complete'); // 디버깅용
 }
 
-function closeCharacterModal() {
+function closeCharacterModal(skipGameLoad = false) {
+    console.log('closeCharacterModal called with skipGameLoad:', skipGameLoad); // 디버깅용
+    
     document.getElementById('characterModal').style.display = 'none';
     document.getElementById('characterNickname').value = '';
     document.getElementById('characterMessage').textContent = '';
+    
+    // 이벤트 리스너 제거
+    document.getElementById('bodyColor').removeEventListener('input', updateCharacterPreview);
+    document.getElementById('helmetColor').removeEventListener('input', updateCharacterPreview);
+    document.getElementById('equipmentColor').removeEventListener('input', updateCharacterPreview);
+    
+    // skipGameLoad가 true면 게임 데이터 로드하지 않음 (캐릭터 생성 후 호출시)
+    if (!skipGameLoad && currentUser && game && game.player) {
+        console.log('Loading user game data after modal close'); // 디버깅용
+        // 기본 캐릭터 정보로 게임 시작
+        loadUserGameData(currentUser);
+    } else if (skipGameLoad) {
+        console.log('Skipping game data load as requested'); // 디버깅용
+    }
 }
 
 function updateCharacterPreview() {
@@ -288,7 +341,10 @@ function updateCharacterPreview() {
 }
 
 function createCharacter() {
+    console.log('createCharacter() called'); // 디버깅용
+    
     if (!currentUser) {
+        console.log('No current user found'); // 디버깅용
         document.getElementById('characterMessage').textContent = '로그인이 필요합니다.';
         return;
     }
@@ -296,15 +352,21 @@ function createCharacter() {
     const nickname = document.getElementById('characterNickname').value.trim();
     const messageEl = document.getElementById('characterMessage');
     
+    console.log('Creating character with nickname:', nickname); // 디버깅용
+    
     if (!nickname) {
+        console.log('No nickname provided'); // 디버깅용
         messageEl.textContent = '닉네임을 입력해주세요.';
         return;
     }
     
     if (isNicknameTaken(nickname)) {
+        console.log('Nickname already taken:', nickname); // 디버깅용
         messageEl.textContent = '이미 사용 중인 닉네임입니다.';
         return;
     }
+    
+    console.log('Proceeding with character creation...'); // 디버깅용
     
     // 캐릭터 정보 생성
     const characterData = {
@@ -317,23 +379,55 @@ function createCharacter() {
         createdAt: Date.now()
     };
     
+    console.log('Character data created:', characterData); // 디버깅용
+    
     // 캐릭터 정보 저장
     localStorage.setItem(`character_${currentUser}`, JSON.stringify(characterData));
     addUsedNickname(nickname);
+    console.log('Character data saved to localStorage'); // 디버깅용
+    
+    // 게임이 아직 초기화되지 않았다면 초기화
+    if (!game) {
+        console.log('Initializing game after character creation'); // 디버깅용
+        try {
+            initGame();
+            console.log('Game initialized successfully'); // 디버깅용
+        } catch (error) {
+            console.error('Error initializing game:', error); // 디버깅용
+            return;
+        }
+    } else {
+        console.log('Game already initialized'); // 디버깅용
+    }
     
     // 게임 플레이어에 적용
     if (game && game.player) {
         game.player.character = characterData;
+        console.log('Character data applied to game player'); // 디버깅용
+    } else {
+        console.error('Game or game.player not available'); // 디버깅용
     }
     
-    closeCharacterModal();
+    console.log('About to close character modal'); // 디버깅용
+    closeCharacterModal(true); // skipGameLoad = true로 호출
+    console.log('Character modal closed'); // 디버깅용
     
-    // 게임 데이터 로드 (새 사용자인 경우 새 게임 시작)
-    loadUserGameData(currentUser);
+    // 새 사용자이므로 게임 데이터 로드 건너뛰고 바로 무기 선택으로
+    console.log('Character created, proceeding to weapon selection'); // 디버깅용
     
-    if (typeof showNotification === 'function') {
-        showNotification(`캐릭터 '${nickname}' 생성 완료!`, 'success');
-    }
+    // 새 캐릭터이므로 무기 선택 패널 표시
+    setTimeout(() => {
+        console.log('About to show weapon selector'); // 디버깅용
+        if (typeof showWeaponSelector === 'function') {
+            showWeaponSelector();
+            console.log('Weapon selector shown'); // 디버깅용
+        } else {
+            console.error('showWeaponSelector function not available'); // 디버깅용
+        }
+    }, 500);
+    
+    showNotification(`캐릭터 '${nickname}' 생성 완료!`, 'success');
+    console.log('Character creation completed'); // 디버깅용
 }
 
 // 닉네임 관리
@@ -377,12 +471,8 @@ function resetGame() {
         }
         
         // 게임 재시작
-        if (typeof initGame === 'function') {
-            initGame();
-        }
-        if (typeof showNotification === 'function') {
-            showNotification('게임이 초기화되었습니다.', 'success');
-        }
+        initGame();
+        showNotification('게임이 초기화되었습니다.', 'success');
     }
 }
 
@@ -396,11 +486,7 @@ function clearAllData() {
         updateAccountInfo();
         
         // 게임 재시작
-        if (typeof initGame === 'function') {
-            initGame();
-        }
-        if (typeof showNotification === 'function') {
-            showNotification('모든 데이터가 삭제되었습니다.', 'info');
-        }
+        initGame();
+        showNotification('모든 데이터가 삭제되었습니다.', 'info');
     }
 } 

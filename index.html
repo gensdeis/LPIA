@@ -497,16 +497,16 @@
                 
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                     <button class="btn" onclick="showRanking()">랭킹 보기</button>
-                    <!-- 무기 변경 버튼 (무기 선택 후 표시) -->
-                    <button class="btn" onclick="showWeaponSelector()" id="weaponChangeBtnInline" style="font-size: 11px; padding: 5px 8px; display: none;">
-                        <span id="currentWeaponIconInline">⚔️</span> 무기 변경
+                    <!-- 무기 선택 버튼 -->
+                    <button class="btn" onclick="showWeaponSelector()" id="weaponSelectBtn" style="font-size: 11px; padding: 5px 8px;">
+                        <span id="weaponSelectIcon">⚔️</span> 무기 선택
                     </button>
                 </div>
                 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
                     <h4 style="margin: 5px 0;">계정 관리</h4>
                     <div id="accountInfo" style="font-size: 12px; margin-bottom: 10px;">
-                        로그인하세요
+                        로그인되지 않음
                     </div>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                         <button class="btn" onclick="showLoginModal()" id="loginButton" style="font-size: 11px; padding: 3px 6px;">로그인</button>
@@ -518,7 +518,7 @@
             </div>
 
             <!-- 무기 선택 패널 -->
-            <div id="weaponSelector" class="ui-panel">
+            <div id="weaponSelector" class="ui-panel" style="display: none;">
                 <h3>무기 선택</h3>
                 <div class="weapon-choice" onclick="selectWeaponType('melee')">
                     <input type="radio" name="weaponType" value="melee" id="meleeWeapon">
@@ -723,5 +723,13 @@
     
     <!-- 4. 게임 로직 -->
     <script src="js/game.js"></script>
+    
+    <!-- 게임 초기화 -->
+    <script>
+        // 페이지 로드 완료 후 게임 시작
+        window.addEventListener('DOMContentLoaded', function() {
+            initGame();
+        });
+    </script>
 </body>
 </html> 
