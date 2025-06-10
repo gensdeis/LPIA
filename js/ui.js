@@ -66,54 +66,81 @@ function showDamageNumber(x, y, damage) {
 function updateUI() {
     if (!game || !game.player) return;
     
-    // 플레이어 정보 업데이트
-    document.getElementById('level').textContent = game.player.level;
-    document.getElementById('hpText').textContent = `${Math.max(0, game.player.hp)}/${game.player.maxHp}`;
-    document.getElementById('mpText').textContent = `${Math.max(0, game.player.mp)}/${game.player.maxMp}`;
-    document.getElementById('gold').textContent = game.player.gold;
-    document.getElementById('power').textContent = game.player.getWeaponPower();
-    document.getElementById('defense').textContent = game.player.getTotalDefense();
+    // 플레이어 정보 업데이트 (안전 체크 포함)
+    const playerLevel = document.getElementById('playerLevel');
+    if (playerLevel) playerLevel.textContent = game.player.level;
+    
+    const hpText = document.getElementById('hpText');
+    if (hpText) hpText.textContent = `${Math.max(0, game.player.hp)}/${game.player.maxHp}`;
+    
+    const mpText = document.getElementById('mpText');
+    if (mpText) mpText.textContent = `${Math.max(0, game.player.mp)}/${game.player.maxMp}`;
+    
+    const playerGold = document.getElementById('playerGold');
+    if (playerGold) playerGold.textContent = game.player.gold;
+    
+    const playerPower = document.getElementById('playerPower');
+    if (playerPower) playerPower.textContent = game.player.getTotalPower();
+    
+    const playerDefense = document.getElementById('playerDefense');
+    if (playerDefense) playerDefense.textContent = game.player.getTotalDefense();
     
     // 방어막 정보 표시
-    if (game.player.shield > 0) {
-        document.getElementById('shieldText').textContent = `${game.player.shield}/${game.player.maxShield}`;
-        document.getElementById('shieldBar').style.width = `${(game.player.shield / game.player.maxShield) * 100}%`;
-        document.getElementById('shieldInfo').style.display = 'block';
-    } else {
-        document.getElementById('shieldInfo').style.display = 'none';
+    const shieldDisplay = document.getElementById('shieldDisplay');
+    if (shieldDisplay) {
+        if (game.player.shield > 0) {
+            const shieldText = document.getElementById('shieldText');
+            const shieldBar = document.getElementById('shieldBar');
+            if (shieldText) shieldText.textContent = `${game.player.shield}/${game.player.maxShield}`;
+            if (shieldBar) shieldBar.style.width = `${(game.player.shield / game.player.maxShield) * 100}%`;
+            shieldDisplay.style.display = 'block';
+        } else {
+            shieldDisplay.style.display = 'none';
+        }
     }
     
     // HP/MP 바 업데이트
     const hpPercent = (game.player.hp / game.player.maxHp) * 100;
     const mpPercent = (game.player.mp / game.player.maxMp) * 100;
-    document.getElementById('hpBar').style.width = hpPercent + '%';
-    document.getElementById('mpBar').style.width = mpPercent + '%';
+    const hpBar = document.getElementById('hpBar');
+    const mpBar = document.getElementById('mpBar');
+    if (hpBar) hpBar.style.width = hpPercent + '%';
+    if (mpBar) mpBar.style.width = mpPercent + '%';
     
     // 경험치 바 업데이트
     const expPercent = (game.player.experience / game.player.experienceToNext) * 100;
-    document.getElementById('expBar').style.width = expPercent + '%';
-    document.getElementById('expText').textContent = `${game.player.experience}/${game.player.experienceToNext} (${expPercent.toFixed(0)}%)`;
+    const expBar = document.getElementById('expBar');
+    const expText = document.getElementById('expText');
+    if (expBar) expBar.style.width = expPercent + '%';
+    if (expText) expText.textContent = `${game.player.experience}/${game.player.experienceToNext} (${expPercent.toFixed(0)}%)`;
     
     // 퀘스트 업데이트
     updateQuestUI();
     
     // 스테이지 정보 업데이트
-    document.getElementById('currentStage').textContent = game.stage;
-    document.getElementById('currentPlanet').textContent = game.getCurrentPlanet();
+    const currentStage = document.getElementById('currentStage');
+    const currentPlanet = document.getElementById('currentPlanet');
+    if (currentStage) currentStage.textContent = game.stage;
+    if (currentPlanet) currentPlanet.textContent = game.getCurrentPlanet();
     
     // 몬스터/보스 정보 업데이트
+    const currentMonster = document.getElementById('currentMonster');
+    const monsterLevel = document.getElementById('monsterLevel');
+    const bossHpBar = document.getElementById('bossHpBar');
+    const bossHpText = document.getElementById('bossHpText');
+    
     if (game.currentBoss) {
-        document.getElementById('currentMonster').textContent = game.currentBoss.name;
-        document.getElementById('monsterLevel').textContent = game.currentBoss.level;
+        if (currentMonster) currentMonster.textContent = game.currentBoss.name;
+        if (monsterLevel) monsterLevel.textContent = game.currentBoss.level;
         const bossHpPercent = (game.currentBoss.hp / game.currentBoss.maxHp) * 100;
-        document.getElementById('bossHpBar').style.width = bossHpPercent + '%';
-        document.getElementById('bossHpText').textContent = `${Math.max(0, game.currentBoss.hp)}/${game.currentBoss.maxHp} (${bossHpPercent.toFixed(0)}%)`;
+        if (bossHpBar) bossHpBar.style.width = bossHpPercent + '%';
+        if (bossHpText) bossHpText.textContent = `${Math.max(0, game.currentBoss.hp)}/${game.currentBoss.maxHp} (${bossHpPercent.toFixed(0)}%)`;
     } else if (game.currentMonster) {
-        document.getElementById('currentMonster').textContent = game.currentMonster.name;
-        document.getElementById('monsterLevel').textContent = game.currentMonster.level;
+        if (currentMonster) currentMonster.textContent = game.currentMonster.name;
+        if (monsterLevel) monsterLevel.textContent = game.currentMonster.level;
         const monsterHpPercent = (game.currentMonster.hp / game.currentMonster.maxHp) * 100;
-        document.getElementById('bossHpBar').style.width = monsterHpPercent + '%';
-        document.getElementById('bossHpText').textContent = `${Math.max(0, game.currentMonster.hp)}/${game.currentMonster.maxHp} (${monsterHpPercent.toFixed(0)}%)`;
+        if (bossHpBar) bossHpBar.style.width = monsterHpPercent + '%';
+        if (bossHpText) bossHpText.textContent = `${Math.max(0, game.currentMonster.hp)}/${game.currentMonster.maxHp} (${monsterHpPercent.toFixed(0)}%)`;
     }
     
     // 장비 슬롯 업데이트
@@ -136,7 +163,11 @@ function updateUI() {
 // 퀘스트 UI 업데이트
 function updateQuestUI() {
     const questList = document.getElementById('questList');
+    if (!questList) return;
+    
     questList.innerHTML = '';
+    
+    if (!game.quests) return;
     
     game.quests.forEach(quest => {
         const questElement = document.createElement('div');
@@ -173,8 +204,12 @@ function updateQuestUI() {
 
 // 장비 UI 업데이트
 function updateEquipmentUI() {
+    if (!game || !game.player || !game.player.equipment) return;
+    
     Object.keys(game.player.equipment).forEach(slot => {
         const slotElement = document.querySelector(`[data-slot="${slot}"]`);
+        if (!slotElement) return; // 요소가 없으면 건너뛰기
+        
         const equipment = game.player.equipment[slot];
         
         if (equipment) {
