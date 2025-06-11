@@ -15,7 +15,7 @@
         
         <!-- 버전 표시 -->
         <div id="version">
-            v0.1.4
+            v0.1.5
         </div>
         
         <div id="ui">
@@ -50,13 +50,13 @@
                 <div class="skills-section">
                     <h4 class="skills-title">스킬</h4>
                     <div class="skills-container">
-                        <button class="skill-btn" onclick="game.useSkill(1)" id="skill1" title="미사일 공격 (25 MP)">
+                        <button class="skill-btn" onclick="if(window.game && window.game.useSkill) window.game.useSkill(1)" id="skill1" title="미사일 공격 (25 MP)">
                             🚀 <span id="skill1Cooldown"></span>
                         </button>
-                        <button class="skill-btn" onclick="game.useSkill(2)" id="skill2" title="쉴드 (20 MP)">
+                        <button class="skill-btn" onclick="if(window.game && window.game.useSkill) window.game.useSkill(2)" id="skill2" title="쉴드 (20 MP)">
                             🛡️ <span id="skill2Cooldown"></span>
                         </button>
-                        <button class="skill-btn ultimate" onclick="game.useSkill(3)" id="skill3" title="행성 파괴 레이저 (60 MP)">
+                        <button class="skill-btn ultimate" onclick="if(window.game && window.game.useSkill) window.game.useSkill(3)" id="skill3" title="행성 파괴 레이저 (60 MP)">
                             ⭐ <span id="skill3Cooldown"></span>
                         </button>
                     </div>
@@ -100,7 +100,7 @@
                 <div class="action-buttons">
                     <button class="btn" onclick="showRanking()">랭킹 보기</button>
                     <!-- 무기 선택 버튼 -->
-                    <button class="btn weapon-select-btn" onclick="showWeaponSelector()" id="weaponSelectBtn">
+                    <button class="btn weapon-select-btn" onclick="if(typeof showWeaponSelector === 'function') showWeaponSelector()" id="weaponSelectBtn">
                         <span id="weaponSelectIcon">⚔️</span> 무기 선택
                     </button>
                 </div>
@@ -123,14 +123,14 @@
             <div id="weaponSelector" class="ui-panel hidden">
                 <h3>무기 선택</h3>
                 <div class="weapon-choice">
-                    <input type="radio" name="weaponType" value="melee" id="meleeWeapon" onclick="selectWeaponType('melee')">
+                    <input type="radio" name="weaponType" value="melee" id="meleeWeapon" onclick="if(typeof selectWeaponType === 'function') selectWeaponType('melee')">
                     <label for="meleeWeapon">⚔️ 근접 무기 (광선검)</label>
                     <div class="weapon-stats">
                         <div>데미지, 근접거리</div>
                     </div>
                 </div>
                 <div class="weapon-choice">
-                    <input type="radio" name="weaponType" value="ranged" id="rangedWeapon" onclick="selectWeaponType('ranged')">
+                    <input type="radio" name="weaponType" value="ranged" id="rangedWeapon" onclick="if(typeof selectWeaponType === 'function') selectWeaponType('ranged')">
                     <label for="rangedWeapon">🔫 원거리 무기 (레이저총)</label>
                     <div class="weapon-stats">
                         <div>명중률: <span id="rangedAccuracy">70%</span></div>
@@ -138,7 +138,7 @@
                     </div>
                 </div>
                 <div class="weapon-confirm">
-                    <button class="btn weapon-confirm-btn" id="confirmWeaponSelection" onclick="confirmWeaponSelection()">선택하기</button>
+                    <button class="btn weapon-confirm-btn" id="confirmWeaponSelection" onclick="if(typeof confirmWeaponSelection === 'function') confirmWeaponSelection()">선택하기</button>
                 </div>
                 <div class="weapon-note">
                     선택한 무기만 사용합니다

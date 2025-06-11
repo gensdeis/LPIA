@@ -1,39 +1,39 @@
-// Monster í´ë˜ìŠ¤ - ëª¬ìŠ¤í„° ê´€ë ¨ ë¡œì§
+// Monster Å¬·¡½º - ¸ó½ºÅÍ °ü·Ã ·ÎÁ÷
 class Monster {
     constructor(name, level, stage) {
         this.name = name;
         this.level = level;
         this.stage = stage;
         
-        // ê°œì„ ëœ ìŠ¤íƒ¯ ê³„ì‚° (ë ˆë²¨ê³¼ ìŠ¤í…Œì´ì§€ ê³ ë ¤)
-        const stageBonus = Math.floor(stage * 0.3); // ìŠ¤í…Œì´ì§€ ë³´ë„ˆìŠ¤
-        this.maxHp = Math.floor(level * 75 + stageBonus * 25 + 120); // ê¸°ë³¸ 120 + ë ˆë²¨ë‹¹ 75 + ìŠ¤í…Œì´ì§€ë‹¹ 7.5
+        // °³¼±µÈ ½ºÅÈ °è»ê (·¹º§°ú ½ºÅ×ÀÌÁö °í·Á)
+        const stageBonus = Math.floor(stage * 0.3); // ½ºÅ×ÀÌÁö º¸³Ê½º
+        this.maxHp = Math.floor(level * 75 + stageBonus * 25 + 120); // ±âº» 120 + ·¹º§´ç 75 + ½ºÅ×ÀÌÁö´ç 7.5
         this.hp = this.maxHp;
-        this.attack = Math.floor(level * 7 + stageBonus * 3 + 18); // ê¸°ë³¸ 18 + ë ˆë²¨ë‹¹ 7 + ìŠ¤í…Œì´ì§€ë‹¹ 0.9
-        this.defense = Math.floor(level * 2 + stageBonus * 1 + 8); // ê¸°ë³¸ 8 + ë ˆë²¨ë‹¹ 2 + ìŠ¤í…Œì´ì§€ë‹¹ 0.3
-        this.gold = Math.floor(level * 4 + stageBonus * 2 + Math.floor(Math.random() * 12) + 8); // í–¥ìƒëœ ê³¨ë“œ ë³´ìƒ
-        this.experience = Math.floor(level * 3 + stageBonus * 1 + 8); // í–¥ìƒëœ ê²½í—˜ì¹˜
+        this.attack = Math.floor(level * 7 + stageBonus * 3 + 18); // ±âº» 18 + ·¹º§´ç 7 + ½ºÅ×ÀÌÁö´ç 0.9
+        this.defense = Math.floor(level * 2 + stageBonus * 1 + 8); // ±âº» 8 + ·¹º§´ç 2 + ½ºÅ×ÀÌÁö´ç 0.3
+        this.gold = Math.floor(level * 4 + stageBonus * 2 + Math.floor(Math.random() * 12) + 8); // Çâ»óµÈ °ñµå º¸»ó
+        this.experience = Math.floor(level * 3 + stageBonus * 1 + 8); // Çâ»óµÈ °æÇèÄ¡
         
         this.positionX = 0.8;
         this.positionY = 0.5;
         this.isDead = false;
         this.deathTimer = 0;
-        this.deathAnimationDuration = 1000; // 1ì´ˆ
+        this.deathAnimationDuration = 1000; // 1ÃÊ
         
-        // ì´ë™ ê´€ë ¨ ì†ì„± ì¶”ê°€
+        // ÀÌµ¿ °ü·Ã ¼Ó¼º Ãß°¡
         this.originalPositionX = this.positionX;
         this.originalPositionY = this.positionY;
-        this.moveSpeed = 0.0003; // ë§¤ìš° ì²œì²œíˆ ì´ë™
-        this.targetPlayerX = 0.5; // í”Œë ˆì´ì–´ ìƒˆë¡œìš´ ì¤‘ì•™ ìœ„ì¹˜
+        this.moveSpeed = 0.0008; // Á¶±İ ´õ ºü¸£°Ô ÀÌµ¿
+        this.targetPlayerX = 0.5; // ÇÃ·¹ÀÌ¾î »õ·Î¿î Áß¾Ó À§Ä¡
         this.targetPlayerY = 0.5;
         
-        // ì• ë‹ˆë©”ì´ì…˜ ë° ì´í™íŠ¸
+        // ¾Ö´Ï¸ŞÀÌ¼Ç ¹× ÀÌÆåÆ®
         this.hitEffect = false;
         this.hitEffectTimer = 0;
-        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 2500); // ëœë¤ ì‹œì‘ ì‹œê°„ìœ¼ë¡œ ë¶„ì‚°
-        this.attackCooldown = 2500 + Math.floor(Math.random() * 1000); // 2.5~3.5ì´ˆ ì‚¬ì´ ëœë¤ ì¿¨ë‹¤ìš´
+        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 2500); // ·£´ı ½ÃÀÛ ½Ã°£À¸·Î ºĞ»ê
+        this.attackCooldown = 2500 + Math.floor(Math.random() * 1000); // 2.5~3.5ÃÊ »çÀÌ ·£´ı Äğ´Ù¿î
         
-        // ë„‰ë°± íš¨ê³¼
+        // ³Ë¹é È¿°ú
         this.knockbackEffect = null;
     }
 
@@ -47,7 +47,7 @@ class Monster {
         if (this.hp <= 0) {
             this.hp = 0;
             this.startDeathAnimation();
-            return true; // ì£½ìŒ
+            return true; // Á×À½
         }
         return false;
     }
@@ -60,26 +60,26 @@ class Monster {
     }
     
     updateEffects() {
-        // í”Œë ˆì´ì–´ìª½ìœ¼ë¡œ ì²œì²œíˆ ì´ë™
+        // ÇÃ·¹ÀÌ¾îÂÊÀ¸·Î ÃµÃµÈ÷ ÀÌµ¿
         this.moveTowardsPlayer();
         
-        // í”¼ê²© íš¨ê³¼ ì—…ë°ì´íŠ¸
+        // ÇÇ°İ È¿°ú ¾÷µ¥ÀÌÆ®
         if (this.hitEffect && Date.now() - this.hitEffectTimer > 200) {
             this.hitEffect = false;
         }
         
-        // ë„‰ë°± íš¨ê³¼ ì—…ë°ì´íŠ¸
+        // ³Ë¹é È¿°ú ¾÷µ¥ÀÌÆ®
         if (this.knockbackEffect) {
             const elapsed = Date.now() - this.knockbackEffect.startTime;
             const progress = Math.min(1, elapsed / this.knockbackEffect.duration);
             
             if (progress < 0.3) {
-                // ì²« 30%: ë’¤ë¡œ ë°€ë ¤ë‚¨
+                // Ã¹ 30%: µÚ·Î ¹Ğ·Á³²
                 const pushProgress = progress / 0.3;
                 this.positionX = this.knockbackEffect.originalX + 
                     (this.knockbackEffect.pushDistance * pushProgress);
             } else {
-                // ë‚˜ë¨¸ì§€ 70%: ì›ë˜ ìë¦¬ë¡œ ë³µê·€
+                // ³ª¸ÓÁö 70%: ¿ø·¡ ÀÚ¸®·Î º¹±Í
                 const returnProgress = (progress - 0.3) / 0.7;
                 this.positionX = this.knockbackEffect.originalX + 
                     this.knockbackEffect.pushDistance * (1 - returnProgress);
@@ -95,38 +95,54 @@ class Monster {
     moveTowardsPlayer() {
         if (this.isDead || this.knockbackEffect) return;
         
-        // ê³µê²© íƒ€ì…ì— ë”°ë¥¸ ë‹¤ë¥¸ í–‰ë™ íŒ¨í„´
+        // °ÔÀÓ °´Ã¼¿¡¼­ ÇÃ·¹ÀÌ¾î À§Ä¡ °¡Á®¿À±â
+        if (window.game && window.game.playerPosition) {
+            this.targetPlayerX = window.game.playerPosition.x;
+            this.targetPlayerY = window.game.playerPosition.y;
+        }
+        
+        // °ø°İ Å¸ÀÔ¿¡ µû¸¥ ´Ù¸¥ Çàµ¿ ÆĞÅÏ
         if (this.attackType === 'melee') {
-            // ê·¼ì ‘ ëª¬ìŠ¤í„°: í”Œë ˆì´ì–´ì—ê²Œ ë§¤ìš° ê°€ê¹Œì´ ì ‘ê·¼ (ê³µê²©ì„ ìœ„í•´)
-            const minDistance = 0.18; // ê·¼ì ‘ ê³µê²©ì„ ìœ„í•´ ë” ê°€ê¹Œì´
+            // ±ÙÁ¢ ¸ó½ºÅÍ: ÇÃ·¹ÀÌ¾î¿¡°Ô ¸Å¿ì °¡±õ°Ô Á¢±Ù (°ø°İÀ» À§ÇØ)
+            const minDistance = 0.15; // ±ÙÁ¢ °ø°İÀ» À§ÇØ ´õ °¡±õ°Ô
             const dx = this.targetPlayerX - this.positionX;
             const dy = this.targetPlayerY - this.positionY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance > minDistance) {
-                // ë” ë¹ ë¥´ê²Œ ì ‘ê·¼
-                this.positionX += dx * this.moveSpeed * 1.5;
-                this.positionY += dy * this.moveSpeed * 1.5;
+                // ´õ ºü¸£°Ô Á¢±Ù
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
+                this.positionX += normalizedDx * this.moveSpeed * 1.8;
+                this.positionY += normalizedDy * this.moveSpeed * 1.8;
             }
         } else {
-            // ì›ê±°ë¦¬ ëª¬ìŠ¤í„°: í”Œë ˆì´ì–´ì—ê²Œ ì ‘ê·¼í•˜ë˜ ì ë‹¹í•œ ê±°ë¦¬ ìœ ì§€ (ì›ê±°ë¦¬ ê³µê²©ì„ ìœ„í•´)
-            const optimalDistance = 0.3; // ì›ê±°ë¦¬ ê³µê²©ì— ì í•©í•œ ê±°ë¦¬
-            const maxDistance = 0.4; // ë„ˆë¬´ ë©€ë©´ ì ‘ê·¼
+            // ¿ø°Å¸® ¸ó½ºÅÍ: ÇÃ·¹ÀÌ¾î¿¡°Ô Á¢±ÙÇÏµÇ Àû´çÇÑ °Å¸® À¯Áö (¿ø°Å¸® °ø°İÀ» À§ÇØ)
+            const optimalDistance = 0.25; // ¿ø°Å¸® °ø°İ¿¡ ÀûÇÕÇÑ °Å¸®
+            const maxDistance = 0.4; // ³Ê¹« ¸Ö¸é Á¢±Ù
             const dx = this.targetPlayerX - this.positionX;
             const dy = this.targetPlayerY - this.positionY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance > maxDistance) {
-                // ë„ˆë¬´ ë©€ë©´ ì ‘ê·¼
-                this.positionX += dx * this.moveSpeed;
-                this.positionY += dy * this.moveSpeed;
+                // ³Ê¹« ¸Ö¸é Á¢±Ù
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
+                this.positionX += normalizedDx * this.moveSpeed;
+                this.positionY += normalizedDy * this.moveSpeed;
             } else if (distance < optimalDistance) {
-                // ë„ˆë¬´ ê°€ê¹Œìš°ë©´ ì‚´ì§ ë’¤ë¡œ
-                this.positionX -= dx * this.moveSpeed * 0.5;
-                this.positionY -= dy * this.moveSpeed * 0.5;
+                // ³Ê¹« °¡±î¿ì¸é ¾à°£ µÚ·Î
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
+                this.positionX -= normalizedDx * this.moveSpeed * 0.5;
+                this.positionY -= normalizedDy * this.moveSpeed * 0.5;
             }
-            // ì ë‹¹í•œ ê±°ë¦¬ë©´ ì´ë™í•˜ì§€ ì•ŠìŒ
+            // Àû´çÇÑ °Å¸®¸é ÀÌµ¿ÇÏÁö ¾ÊÀ½
         }
+        
+        // È­¸é °æ°è Á¦ÇÑ
+        this.positionX = Math.max(0.05, Math.min(0.95, this.positionX));
+        this.positionY = Math.max(0.05, Math.min(0.95, this.positionY));
     }
 
     canAttack() {
@@ -145,30 +161,33 @@ class Monster {
     }
 }
 
-// Boss í´ë˜ìŠ¤ - Monsterë¥¼ ìƒì†ë°›ìŒ
+// Boss Å¬·¡½º - Monster¸¦ »ó¼Ó¹ŞÀ½
 class Boss extends Monster {
     constructor(name, level, stage) {
         super(name, level, stage);
         
-        // ë³´ìŠ¤ëŠ” í›¨ì”¬ ê°•ë ¥í•œ ìŠ¤íƒ¯ (Monster í´ë˜ìŠ¤ ê¸°ë³¸ ìŠ¤íƒ¯ì— ì¶”ê°€ ë³´ë„ˆìŠ¤)
-        const stageBonusMultiplier = 1 + Math.floor(stage / 50) * 0.2; // 50ìŠ¤í…Œì´ì§€ë§ˆë‹¤ 20% ì¦ê°€
+        // º¸½º´Â ÈÎ¾À °­·ÂÇÑ ½ºÅÈ (Monster Å¬·¡½º ±âº» ½ºÅÈ¿¡ Ãß°¡ º¸³Ê½º)
+        const stageBonusMultiplier = 1 + Math.floor(stage / 50) * 0.2; // 50½ºÅ×ÀÌÁö¸¶´Ù 20% Áõ°¡
         
-        this.maxHp = Math.floor(this.maxHp * 6 + level * 400 + stage * 20); // ê¸°ë³¸ ëª¬ìŠ¤í„°ì˜ 6ë°° + ì¶”ê°€ ë³´ë„ˆìŠ¤
+        this.maxHp = Math.floor(this.maxHp * 6 + level * 400 + stage * 20); // ±âº» ¸ó½ºÅÍÀÇ 6¹è + Ãß°¡ º¸³Ê½º
         this.hp = this.maxHp;
-        this.attack = Math.floor(this.attack * 3 + level * 20 + stage * 5); // ê¸°ë³¸ ëª¬ìŠ¤í„°ì˜ 3ë°° + ì¶”ê°€ ë³´ë„ˆìŠ¤
-        this.defense = Math.floor(this.defense * 4 + level * 8 + stage * 2); // ê¸°ë³¸ ëª¬ìŠ¤í„°ì˜ 4ë°° + ì¶”ê°€ ë³´ë„ˆìŠ¤
-        this.gold = Math.floor(level * 40 + stage * 15 + 150); // í›¨ì”¬ ë§ì€ ê³¨ë“œ ë³´ìƒ
-        this.experience = Math.floor(level * 25 + stage * 8 + 120); // í›¨ì”¬ ë§ì€ ê²½í—˜ì¹˜
+        this.attack = Math.floor(this.attack * 3 + level * 20 + stage * 5); // ±âº» ¸ó½ºÅÍÀÇ 3¹è + Ãß°¡ º¸³Ê½º
+        this.defense = Math.floor(this.defense * 4 + level * 8 + stage * 2); // ±âº» ¸ó½ºÅÍÀÇ 4¹è + Ãß°¡ º¸³Ê½º
+        this.gold = Math.floor(level * 40 + stage * 15 + 150); // ÈÎ¾À ¸¹Àº °ñµå º¸»ó
+        this.experience = Math.floor(level * 25 + stage * 8 + 120); // ÈÎ¾À ¸¹Àº °æÇèÄ¡
         
-        // ìŠ¤í…Œì´ì§€ ë³´ë„ˆìŠ¤ ì ìš©
+        // ½ºÅ×ÀÌÁö º¸³Ê½º Àû¿ë
         this.maxHp = Math.floor(this.maxHp * stageBonusMultiplier);
         this.attack = Math.floor(this.attack * stageBonusMultiplier);
         this.defense = Math.floor(this.defense * stageBonusMultiplier);
-        this.hp = this.maxHp; // HP ì¬ì„¤ì •
+        this.hp = this.maxHp; // HP Àç¼³Á¤
         
         this.positionX = 0.65;
         this.positionY = 0.5;
-        this.attackCooldown = 3000 + Math.floor(Math.random() * 2000); // 3~5ì´ˆ ì‚¬ì´ ëœë¤ ì¿¨ë‹¤ìš´
-        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 3000); // ëœë¤ ì‹œì‘ ì‹œê°„ìœ¼ë¡œ ë¶„ì‚°
+        this.attackCooldown = 3000 + Math.floor(Math.random() * 2000); // 3~5ÃÊ »çÀÌ ·£´ı Äğ´Ù¿î
+        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 3000); // ·£´ı ½ÃÀÛ ½Ã°£À¸·Î ºĞ»ê
+        
+        // º¸½ºµµ ÀÌµ¿ ¼Óµµ Á¶Á¤
+        this.moveSpeed = 0.0005; // º¸½º´Â Á¶±İ ´õ ÃµÃµÈ÷ ÀÌµ¿
     }
 } 

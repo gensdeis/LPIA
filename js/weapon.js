@@ -183,12 +183,14 @@ function hideWeaponSelector() {
     const weaponSelectBtn = document.getElementById('weaponSelectBtn');
     
     if (weaponSelector) {
+        weaponSelector.classList.add('hidden');
         weaponSelector.style.display = 'none';
         console.log('Weapon selector hidden');
     }
     
     if (weaponSelectBtn) {
         weaponSelectBtn.style.display = 'inline-block';
+        console.log('Weapon select button shown');
         // 현재 선택된 무기에 따라 버튼 텍스트 변경
         if (window.game && window.game.player && window.game.player.selectedWeaponType) {
             const icon = window.game.player.selectedWeaponType === 'melee' ? '⚔️' : '🔫';
@@ -207,12 +209,14 @@ function showWeaponSelector() {
     const weaponSelectBtn = document.getElementById('weaponSelectBtn');
     
     if (weaponSelector) {
+        weaponSelector.classList.remove('hidden');
         weaponSelector.style.display = 'block';
         console.log('Weapon selector shown');
     }
     
     if (weaponSelectBtn) {
         weaponSelectBtn.style.display = 'none';
+        console.log('Weapon select button hidden');
     }
     
     // UI 상태 업데이트

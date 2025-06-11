@@ -181,25 +181,32 @@ class GameUseCase {
         // 공격 타입 랜덤 선택 (근접/원거리)
         newMonster.attackType = Math.random() < 0.5 ? 'melee' : 'ranged';
         
-        // 다양한 위치에서 스폰 (캔버스 전체 영역 활용)
-        const spawnArea = Math.random();
-        if (spawnArea < 0.25) {
-            // 상단 스폰
-            newMonster.positionX = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
-            newMonster.positionY = 0.1 + Math.random() * 0.2; // 0.1 ~ 0.3
-        } else if (spawnArea < 0.5) {
-            // 하단 스폰
-            newMonster.positionX = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
-            newMonster.positionY = 0.7 + Math.random() * 0.2; // 0.7 ~ 0.9
-        } else if (spawnArea < 0.75) {
-            // 좌측 스폰
-            newMonster.positionX = 0.1 + Math.random() * 0.2; // 0.1 ~ 0.3
-            newMonster.positionY = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
-        } else {
-            // 우측 스폰
-            newMonster.positionX = 0.7 + Math.random() * 0.2; // 0.7 ~ 0.9
-            newMonster.positionY = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
-        }
+        // 개선된 스폰 위치 - 플레이어 주변에서 적절한 거리를 두고 스폰
+        const playerX = this.playerPosition.x;
+        const playerY = this.playerPosition.y;
+        const minSpawnDistance = 0.3; // 플레이어로부터 최소 거리
+        const maxSpawnDistance = 0.8; // 플레이어로부터 최대 거리
+        
+        let spawnX, spawnY;
+        let attempts = 0;
+        
+        // 플레이어로부터 적절한 거리에 스폰될 때까지 시도
+        do {
+            const angle = Math.random() * 2 * Math.PI; // 랜덤 각도
+            const distance = minSpawnDistance + Math.random() * (maxSpawnDistance - minSpawnDistance);
+            
+            spawnX = playerX + Math.cos(angle) * distance;
+            spawnY = playerY + Math.sin(angle) * distance;
+            
+            // 화면 경계 내로 제한
+            spawnX = Math.max(0.05, Math.min(0.95, spawnX));
+            spawnY = Math.max(0.05, Math.min(0.95, spawnY));
+            
+            attempts++;
+        } while (attempts < 10); // 최대 10번 시도
+        
+        newMonster.positionX = spawnX;
+        newMonster.positionY = spawnY;
         newMonster.scale = 1;
         newMonster.alpha = 1;
         
@@ -1830,9 +1837,11 @@ function startGameLoop() {
         window.game.updateSaberSwingAnimation();
         
         // 몬스터 효과 업데이트
-        if (window.game.currentMonster) {
-            window.game.currentMonster.updateEffects();
-        }
+        window.game.monsters.forEach(monster => {
+            if (monster && !monster.isDead) {
+                monster.updateEffects();
+            }
+        });
         if (window.game.currentBoss) {
             window.game.currentBoss.updateEffects();
         }
@@ -2593,6 +2602,13 @@ window.initGame = function initGame() {
     
     // UI 업데이트
     updateUI();
+    
+    // 무기 선택 상태 초기화 및 확인
+    if (typeof checkWeaponSelectionState === 'function') {
+        setTimeout(() => {
+            checkWeaponSelectionState();
+        }, 100);
+    }
     
     // 자동 저장 (더 안정적인 자동 저장)
     setInterval(() => {
