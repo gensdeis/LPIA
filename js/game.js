@@ -1794,70 +1794,72 @@ function startGameLoop() {
     // 이중 루프 시스템: setInterval로 게임 로직, requestAnimationFrame으로 렌더링
     // setInterval로 게임 로직 실행 (브라우저 포커스 아웃 상태에서도 지속)
     gameLoopInterval = setInterval(() => {
-        if (!gameRunning) return;
+        if (!gameRunning || !window.game) return;
         
         // 몬스터 스폰 시스템 업데이트
-        game.updateMonsterSpawning();
+        window.game.updateMonsterSpawning();
         
         // 자동 보스 도전 체크
-        game.checkAutoChallengeBoss();
+        window.game.checkAutoChallengeBoss();
         
         // 플레이어 자동 이동 (근접 공격을 위해)
-        game.updatePlayerMovement();
+        window.game.updatePlayerMovement();
         
         // 투사체 업데이트
-        game.updateProjectiles();
+        window.game.updateProjectiles();
         
         // 자동 포션 사용 체크
-        game.checkAutoPotion();
+        window.game.checkAutoPotion();
         
         // MP 자동 회복
-        game.updateMpRecover();
+        window.game.updateMpRecover();
         
         // 스킬 이펙트 업데이트
-        game.updateSkillEffects();
+        window.game.updateSkillEffects();
         
         // Miss 텍스트 업데이트
-        game.updateMissTexts();
+        window.game.updateMissTexts();
         
         // 미사일 추적 시스템 업데이트
-        game.updateMissileTracking();
+        window.game.updateMissileTracking();
         
         // 몸통박치기 애니메이션 업데이트
-        game.updateBodySlamAnimation();
+        window.game.updateBodySlamAnimation();
         
         // 광선검 휘두르기 애니메이션 업데이트
-        game.updateSaberSwingAnimation();
+        window.game.updateSaberSwingAnimation();
         
         // 몬스터 효과 업데이트
-        if (game.currentMonster) {
-            game.currentMonster.updateEffects();
+        if (window.game.currentMonster) {
+            window.game.currentMonster.updateEffects();
         }
-        if (game.currentBoss) {
-            game.currentBoss.updateEffects();
+        if (window.game.currentBoss) {
+            window.game.currentBoss.updateEffects();
         }
         
         // 자동 전투 (0.6초마다)
-        if (Date.now() - game.lastAttackTime > 600) {
-            game.lastAttackTime = Date.now();
+        if (Date.now() - window.game.lastAttackTime > 600) {
+            window.game.lastAttackTime = Date.now();
             let combatResult = false;
-            if (game.currentBoss) {
-                combatResult = game.attackBoss();
+            if (window.game.currentBoss) {
+                combatResult = window.game.attackBoss();
             } else {
-                combatResult = game.attackMonster();
+                combatResult = window.game.attackMonster();
             }
         }
         
         // 플레이 시간 증가 (1초마다)
-        if (Date.now() - (game.lastTimeUpdate || 0) > 1000) {
-            game.player.playTime += 1;
-            game.lastTimeUpdate = Date.now();
+        if (Date.now() - (window.game.lastTimeUpdate || 0) > 1000) {
+            window.game.player.playTime += 1;
+            window.game.lastTimeUpdate = Date.now();
         }
         
         // UI 업데이트 (덜 자주 업데이트로 성능 최적화)
-        if (Date.now() - (game.lastUIUpdate || 0) > 100) {
-            updateUI();
-            game.lastUIUpdate = Date.now();
+        if (Date.now() - (window.game.lastUIUpdate || 0) > 100) {
+            if (typeof updateUI === 'function') {
+                updateUI();
+            }
+            window.game.lastUIUpdate = Date.now();
         }
     }, 16); // 60fps (16ms마다 실행)
     
@@ -1919,8 +1921,10 @@ window.addEventListener('focus', function() {
 
 // 투사체 그리기
 function drawProjectiles(ctx, canvas) {
+    if (!window.game) return;
+    
     // 플레이어 투사체 그리기
-    game.projectiles.forEach(projectile => {
+    window.game.projectiles.forEach(projectile => {
         if (projectile.active) {
             // 좌표 안전성 검사 - NaN이나 Infinity 체크
             if (!isFinite(projectile.x) || !isFinite(projectile.y)) {
@@ -2031,7 +2035,7 @@ function drawProjectiles(ctx, canvas) {
     });
     
     // 몬스터 투사체 그리기
-    game.monsterProjectiles.forEach(projectile => {
+    window.game.monsterProjectiles.forEach(projectile => {
         if (projectile.active) {
             // 좌표 안전성 검사 - NaN이나 Infinity 체크
             if (!isFinite(projectile.x) || !isFinite(projectile.y)) {
@@ -2152,15 +2156,15 @@ function drawProjectiles(ctx, canvas) {
 
 // 근접 공격 이펙트 그리기
 function drawMeleeEffects(ctx, canvas) {
-    if (!game.meleeEffects || game.meleeEffects.length === 0) return;
+    if (!window.game || !window.game.meleeEffects || window.game.meleeEffects.length === 0) return;
     
-    for (let i = game.meleeEffects.length - 1; i >= 0; i--) {
-        const effect = game.meleeEffects[i];
+    for (let i = window.game.meleeEffects.length - 1; i >= 0; i--) {
+        const effect = window.game.meleeEffects[i];
         const elapsed = Date.now() - effect.startTime;
         const duration = 300; // 0.3초 지속
         
         if (elapsed > duration) {
-            game.meleeEffects.splice(i, 1);
+            window.game.meleeEffects.splice(i, 1);
             continue;
         }
         
@@ -2198,14 +2202,14 @@ function drawMeleeEffects(ctx, canvas) {
 
 // 스킬 이펙트 그리기
 function drawSkillEffects(ctx, canvas) {
-    if (!game.skillEffects || game.skillEffects.length === 0) return;
+    if (!window.game || !window.game.skillEffects || window.game.skillEffects.length === 0) return;
     
-    for (let i = game.skillEffects.length - 1; i >= 0; i--) {
-        const effect = game.skillEffects[i];
+    for (let i = window.game.skillEffects.length - 1; i >= 0; i--) {
+        const effect = window.game.skillEffects[i];
         const elapsed = Date.now() - effect.startTime;
         
         if (elapsed > effect.duration) {
-            game.skillEffects.splice(i, 1);
+            window.game.skillEffects.splice(i, 1);
             continue;
         }
         
@@ -2223,8 +2227,8 @@ function drawSkillEffects(ctx, canvas) {
     }
     
     // 행성파괴 레이저는 별도 처리 (더 눈에 띄도록)
-    if (game.planetDestroyerEffect && game.planetDestroyerEffect.active) {
-        const effect = game.planetDestroyerEffect;
+    if (window.game.planetDestroyerEffect && window.game.planetDestroyerEffect.active) {
+        const effect = window.game.planetDestroyerEffect;
         const elapsed = Date.now() - effect.startTime;
         const totalDuration = effect.chargeTime + effect.fireTime + 2000; // 8초 총 지속시간
         const progress = elapsed / totalDuration;
@@ -2235,8 +2239,10 @@ function drawSkillEffects(ctx, canvas) {
 
 // 방어막 이펙트 그리기
 function drawShieldEffect(ctx, canvas, effect, progress) {
-    const x = canvas.width * game.playerPosition.x;
-    const y = canvas.height * game.playerPosition.y;
+    if (!window.game) return;
+    
+    const x = canvas.width * window.game.playerPosition.x;
+    const y = canvas.height * window.game.playerPosition.y;
     const alpha = Math.sin(progress * Math.PI * 4) * 0.3 + 0.3;
     
     ctx.save();
@@ -2275,7 +2281,7 @@ function drawPlanetDestroyerEffect(ctx, canvas, effect, progress) {
     if (!target) return;
     
     let targetX, targetY;
-    if (target === game.currentBoss) {
+    if (window.game && target === window.game.currentBoss) {
         targetX = canvas.width * 0.65;
         targetY = canvas.height * 0.5;
     } else {
@@ -2452,9 +2458,9 @@ function drawMissileExplosionEffect(ctx, canvas, effect, progress) {
 
 // 몸통박치기 이펙트 그리기
 function drawBodySlamEffect(ctx, canvas) {
-    if (!game.bodySlamAnimation || !game.bodySlamAnimation.active) return;
+    if (!window.game || !window.game.bodySlamAnimation || !window.game.bodySlamAnimation.active) return;
     
-    const animation = game.bodySlamAnimation;
+    const animation = window.game.bodySlamAnimation;
     
     // 충격파 효과 (충격 단계에서만)
     if (animation.phase === 'impact') {
@@ -2548,8 +2554,8 @@ window.addEventListener('resize', () => {
 
 // 페이지 종료 시 저장 로직
 window.addEventListener('beforeunload', () => {
-    if (game) {
-        game.saveGame();
+    if (window.game && typeof window.game.saveGame === 'function') {
+        window.game.saveGame();
     }
 });
 
@@ -2565,12 +2571,12 @@ document.addEventListener('click', (e) => {
 
 // initGame 함수 수정 - 로그인 강제 제거
 window.initGame = function initGame() {
-    window.game = game = new GameUseCase();
+    window.game = new GameUseCase();
     
     // 코나미 커맨드 초기화 (게임 인스턴스에 저장)
-    game.konamiCommand = new KonamiCommand();
+    window.game.konamiCommand = new KonamiCommand();
     
-    game.loadGame();
+    window.game.loadGame();
     
     // 캔버스 설정
     const canvas = document.getElementById('gameCanvas');
@@ -2590,8 +2596,8 @@ window.initGame = function initGame() {
     
     // 자동 저장 (더 안정적인 자동 저장)
     setInterval(() => {
-        if (game && typeof game.saveGame === 'function') {
-            game.saveGame();
+        if (window.game && typeof window.game.saveGame === 'function') {
+            window.game.saveGame();
         }
     }, 30000); // 30초마다 저장
     
@@ -2601,7 +2607,7 @@ window.initGame = function initGame() {
     // 브라우저가 비활성화되어도 게임 로직이 계속 실행되도록 보장
     // 추가 보호 장치: 1분마다 게임 상태 확인
     setInterval(() => {
-        if (gameRunning && game) {
+        if (gameRunning && window.game) {
             // 게임이 실행 중이지만 루프가 멈춘 경우 재시작
             if (!gameLoopInterval) {
                 console.log('Game loop was stopped, restarting...');

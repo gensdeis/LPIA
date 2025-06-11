@@ -18,6 +18,8 @@ function drawGame() {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
+    if (!window.game) return;
+    
     // 캔버스 클리어
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -28,11 +30,11 @@ function drawGame() {
     drawPlayer(ctx, canvas);
     
     // 몬스터/보스 그리기
-    if (game.currentBoss) {
+    if (window.game.currentBoss) {
         drawBoss(ctx, canvas);
-    } else if (game.monsters && game.monsters.length > 0) {
+    } else if (window.game.monsters && window.game.monsters.length > 0) {
         // 모든 살아있는 몬스터들 그리기
-        game.monsters.forEach(monster => {
+        window.game.monsters.forEach(monster => {
             if (!monster.isDead) {
                 drawMonsterFromArray(ctx, canvas, monster);
             }
@@ -57,16 +59,18 @@ function drawGame() {
 
 // 행성 그리기
 function drawPlanets(ctx, canvas) {
-    const planetCount = Math.min(5, Math.floor(game.stage / 20) + 1);
+    if (!window.game) return;
+    
+    const planetCount = Math.min(5, Math.floor(window.game.stage / 20) + 1);
     for (let i = 0; i < planetCount; i++) {
         // 행성을 UI와 겹치지 않게 배치 (상단 20% 영역에 배치)
         const x = (canvas.width * 0.8 / planetCount) * i + canvas.width * 0.15;
         const y = canvas.height * 0.15 + Math.sin(Date.now() * 0.001 + i) * 30;
-        const radius = 15 + (game.stage % 100) * 0.4;
+        const radius = 15 + (window.game.stage % 100) * 0.4;
         
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `hsl(${(game.stage * 10 + i * 60) % 360}, 70%, 60%)`;
+        ctx.fillStyle = `hsl(${(window.game.stage * 10 + i * 60) % 360}, 70%, 60%)`;
         ctx.fill();
         
         // 행성 윤곽선
@@ -78,22 +82,24 @@ function drawPlanets(ctx, canvas) {
 
 // 플레이어 그리기
 function drawPlayer(ctx, canvas) {
+    if (!window.game) return;
+    
     // 몸통박치기 애니메이션 중이면 애니메이션 위치 사용
     let x, y;
-    if (game.bodySlamAnimation && game.bodySlamAnimation.active) {
-        x = game.bodySlamAnimation.currentX;
-        y = game.bodySlamAnimation.currentY;
+    if (window.game.bodySlamAnimation && window.game.bodySlamAnimation.active) {
+        x = window.game.bodySlamAnimation.currentX;
+        y = window.game.bodySlamAnimation.currentY;
         
         // 충격 단계에서 약간의 진동 효과
-        if (game.bodySlamAnimation.phase === 'impact') {
+        if (window.game.bodySlamAnimation.phase === 'impact') {
             x += (Math.random() - 0.5) * 6;
             y += (Math.random() - 0.5) * 6;
         }
     } else {
-        x = canvas.width * game.playerPosition.x;
-        y = canvas.height * game.playerPosition.y + Math.sin(Date.now() * 0.003) * 10;
+        x = canvas.width * window.game.playerPosition.x;
+        y = canvas.height * window.game.playerPosition.y + Math.sin(Date.now() * 0.003) * 10;
     }
-    const player = game.player;
+    const player = window.game.player;
     
     // 캐릭터 색상 가져오기
     const bodyColor = player.character?.color?.body || '#4a90e2';
@@ -160,9 +166,9 @@ function drawPlayer(ctx, canvas) {
         
         // 광선검 휘두르기 애니메이션 계산
         let swingAngle = 0;
-        if (game.saberSwingAnimation && game.saberSwingAnimation.active) {
-            const elapsed = Date.now() - game.saberSwingAnimation.startTime;
-            const progress = elapsed / game.saberSwingAnimation.duration;
+        if (window.game.saberSwingAnimation && window.game.saberSwingAnimation.active) {
+            const elapsed = Date.now() - window.game.saberSwingAnimation.startTime;
+            const progress = elapsed / window.game.saberSwingAnimation.duration;
             
             if (progress <= 1) {
                 // 반시계 방향으로 휘두르기 (0도에서 -90도까지)
@@ -415,9 +421,9 @@ function drawMonsterFromArray(ctx, canvas, monster) {
 
 // 보스 그리기
 function drawBoss(ctx, canvas) {
-    if (!game.currentBoss) return;
+    if (!window.game || !window.game.currentBoss) return;
     
-    const boss = game.currentBoss;
+    const boss = window.game.currentBoss;
     
     // 넉백 효과 계산 (보스는 0.65에서 시작)
     let x, y;
@@ -575,9 +581,9 @@ function drawBoss(ctx, canvas) {
 
 // Miss 텍스트 그리기
 function drawMissTexts(ctx, canvas) {
-    if (!game.missTexts) return;
+    if (!window.game || !window.game.missTexts) return;
     
-    game.missTexts.forEach(missText => {
+    window.game.missTexts.forEach(missText => {
         const elapsed = Date.now() - missText.startTime;
         const progress = elapsed / missText.duration;
         

@@ -1,76 +1,35 @@
-@@ -0,0 +1,352 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>게임 테스트</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f0f0f0;
-        }
-        .test-section {
-            background: white;
-            margin: 10px 0;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .test-result {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .test-pass {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .test-fail {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" href="test-styles.css">
 </head>
 <body>
     <h1>Little Prince Idle Adventure - 테스트</h1>
     
     <div class="test-section">
         <h2>플레이어 테스트</h2>
-        <button onclick="testPlayer()">플레이어 기능 테스트</button>
+        <button onclick="testPlayer()">플레이어 테스트</button>
         <div id="playerTests"></div>
     </div>
 
     <div class="test-section">
         <h2>몬스터 테스트</h2>
-        <button onclick="testMonster()">몬스터 기능 테스트</button>
+        <button onclick="testMonster()">몬스터 테스트</button>
         <div id="monsterTests"></div>
     </div>
 
     <div class="test-section">
         <h2>퀘스트 테스트</h2>
-        <button onclick="testQuest()">퀘스트 기능 테스트</button>
+        <button onclick="testQuest()">퀘스트 테스트</button>
         <div id="questTests"></div>
     </div>
 
     <div class="test-section">
         <h2>장비 테스트</h2>
-        <button onclick="testEquipment()">장비 기능 테스트</button>
+        <button onclick="testEquipment()">장비 테스트</button>
         <div id="equipmentTests"></div>
     </div>
 
@@ -196,7 +155,7 @@
             const container = document.getElementById(containerId);
             const resultDiv = document.createElement('div');
             resultDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
-            resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? '성공' : '실패'} - ${message}`;
+            resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? '����' : '����'} - ${message}`;
             container.appendChild(resultDiv);
         }
 
@@ -213,9 +172,9 @@
             // 경험치 획득 테스트
             const initialLevel = player.level;
             player.gainExperience(100);
-            showResult('playerTests', '레벨업', 
+            showResult('playerTests', '레벨 업', 
                 player.level > initialLevel, 
-                '경험치 100 획득 후 레벨업 확인');
+                '경험치 100 획득 후 레벨 업 확인');
 
             // 전투력 계산 테스트
             const basePower = player.getTotalPower();
@@ -241,7 +200,7 @@
             const isDead = monster.takeDamage(100);
             showResult('monsterTests', '데미지 처리', 
                 monster.hp < initialHp, 
-                '데미지를 받아 HP 감소');
+                '데미지를 받아 HP 감소 확인');
 
             // 사망 테스트
             const weakMonster = new Monster('약한 몬스터', 1, 1);
@@ -259,7 +218,7 @@
             const quest = new Quest(1, '테스트 퀘스트', 10);
             showResult('questTests', '퀘스트 생성', 
                 quest.target === 10 && quest.current === 0, 
-                '목표치와 현재 진행도 설정됨');
+                '목표치와 현재 진행도 설정');
 
             // 진행도 업데이트 테스트
             quest.updateProgress(5);
@@ -281,8 +240,8 @@
             // 장비 생성 테스트
             const equipment = new Equipment('마법검', 'weapon', 5, 100);
             showResult('equipmentTests', '장비 생성', 
-                equipment.name === '마법검' && equipment.power === 100, 
-                '장비 속성이 올바르게 설정됨');
+                equipment.name === '장비 장착' && equipment.power === 100, 
+                '장비가 올바른 슬롯에 장착됨');
 
             // 장비 장착 테스트
             const player = new Player();
@@ -302,7 +261,7 @@
             const container = document.getElementById('gameTests');
             container.innerHTML = '';
 
-            // 통합 시나리오: 플레이어가 몬스터를 잡고 성장하는 과정
+            // 통합 시나리오 : 플레이어가 몬스터를 잡고 성장하는 과정
             const player = new Player();
             const monster = new Monster('테스트 몬스터', 1, 1);
             const quest = new Quest(1, '몬스터 처치', 1);

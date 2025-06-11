@@ -86,16 +86,16 @@ function updateAccountInfo() {
 
 // 사용자 데이터 관리
 function saveUserGameData(userId) {
-    if (!game) return;
+    if (!window.game) return;
     
     const gameData = {
-        player: game.player,
-        stage: game.stage,
-        quests: game.quests,
-        healthPotions: game.healthPotions,
-        autoPotionSettings: game.autoPotionSettings,
-        stageStartState: game.stageStartState,
-        selectedWeaponType: game.player.selectedWeaponType,
+        player: window.game.player,
+        stage: window.game.stage,
+        quests: window.game.quests,
+        healthPotions: window.game.healthPotions,
+        autoPotionSettings: window.game.autoPotionSettings,
+        stageStartState: window.game.stageStartState,
+        selectedWeaponType: window.game.player.selectedWeaponType,
         timestamp: Date.now()
     };
     
@@ -107,45 +107,52 @@ function loadUserGameData(userId) {
     const userDataKey = `gameData_${userId}`;
     const saved = localStorage.getItem(userDataKey);
     
-    if (saved && game) {
+    if (saved && window.game) {
         const gameData = JSON.parse(saved);
         
         // 플레이어 데이터 복원
-        Object.assign(game.player, gameData.player);
-        game.stage = gameData.stage;
-        game.quests = gameData.quests.map(q => Object.assign(new Quest(), q));
+        Object.assign(window.game.player, gameData.player);
+        window.game.stage = gameData.stage;
+        window.game.quests = gameData.quests.map(q => Object.assign(new Quest(), q));
         
         if (gameData.healthPotions) {
-            game.healthPotions = gameData.healthPotions;
+            window.game.healthPotions = gameData.healthPotions;
         }
         
         if (gameData.autoPotionSettings) {
-            game.autoPotionSettings = gameData.autoPotionSettings;
+            window.game.autoPotionSettings = gameData.autoPotionSettings;
             
             // UI 동기화
-            document.getElementById('autoPotionEnabled').checked = gameData.autoPotionSettings.enabled;
-            document.getElementById('autoPotionPercent').value = gameData.autoPotionSettings.triggerPercent;
-            document.getElementById('autoPotionPercentText').textContent = gameData.autoPotionSettings.triggerPercent + '%';
+            const autoPotionEnabled = document.getElementById('autoPotionEnabled');
+            const autoPotionPercent = document.getElementById('autoPotionPercent');
+            const autoPotionPercentText = document.getElementById('autoPotionPercentText');
+            const autoPotionPriority = document.getElementById('autoPotionPriority');
             
-            const priorityString = gameData.autoPotionSettings.priority.join(',');
-            document.getElementById('autoPotionPriority').value = priorityString;
+            if (autoPotionEnabled) autoPotionEnabled.checked = gameData.autoPotionSettings.enabled;
+            if (autoPotionPercent) autoPotionPercent.value = gameData.autoPotionSettings.triggerPercent;
+            if (autoPotionPercentText) autoPotionPercentText.textContent = gameData.autoPotionSettings.triggerPercent + '%';
+            
+            if (autoPotionPriority) {
+                const priorityString = gameData.autoPotionSettings.priority.join(',');
+                autoPotionPriority.value = priorityString;
+            }
         }
         
         if (gameData.stageStartState) {
-            game.stageStartState = gameData.stageStartState;
+            window.game.stageStartState = gameData.stageStartState;
         }
         
         // 무기 선택 정보 복원
         if (gameData.selectedWeaponType) {
-            game.player.selectedWeaponType = gameData.selectedWeaponType;
+            window.game.player.selectedWeaponType = gameData.selectedWeaponType;
         }
         
         // 새 몬스터 스폰
-        game.spawnMonster();
+        window.game.spawnMonster();
         
         // 퀘스트 상태 체크 (레벨, 골드 등 현재 상태와 동기화)
-        if (typeof game.checkQuestStatus === 'function') {
-            game.checkQuestStatus();
+        if (typeof window.game.checkQuestStatus === 'function') {
+            window.game.checkQuestStatus();
         }
         
         // UI 업데이트
@@ -158,8 +165,10 @@ function loadUserGameData(userId) {
         
         // 무기가 선택되어 있으면 무기 패널 숨기기
         setTimeout(() => {
-            if (game.player && game.player.selectedWeaponType) {
-                hideWeaponSelector();
+            if (window.game.player && window.game.player.selectedWeaponType) {
+                if (typeof hideWeaponSelector === 'function') {
+                    hideWeaponSelector();
+                }
             }
         }, 100);
         
@@ -170,7 +179,9 @@ function loadUserGameData(userId) {
         
         // 새 게임에서는 무기 선택 필요
         setTimeout(() => {
-                    checkWeaponSelectionState();
+            if (typeof checkWeaponSelectionState === 'function') {
+                checkWeaponSelectionState();
+            }
         }, 500);
     }
 }
@@ -241,8 +252,13 @@ function loginUser(id, pw) {
     closeLoginModal();
     
     // 게임이 아직 초기화되지 않았다면 초기화
-    if (!game) {
-        initGame();
+    if (!window.game) {
+        if (typeof initGame === 'function') {
+            initGame();
+        } else {
+            console.error('initGame function not available');
+            return;
+        }
     }
     
     // 캐릭터 정보가 없으면 캐릭터 생성 모달 표시
@@ -258,8 +274,8 @@ function loginUser(id, pw) {
         console.log('Character found, loading game data'); // 디버깅용
         // 기존 캐릭터 정보 로드
         const character = JSON.parse(characterData);
-        if (game && game.player) {
-            game.player.character = character;
+        if (window.game && window.game.player) {
+            window.game.player.character = character;
         }
         
         // 게임 데이터 로드
@@ -392,11 +408,16 @@ function createCharacter() {
     console.log('Character data saved to localStorage'); // 디버깅용
     
     // 게임이 아직 초기화되지 않았다면 초기화
-    if (!game) {
+    if (!window.game) {
         console.log('Initializing game after character creation'); // 디버깅용
         try {
-            initGame();
-            console.log('Game initialized successfully'); // 디버깅용
+            if (typeof initGame === 'function') {
+                initGame();
+                console.log('Game initialized successfully'); // 디버깅용
+            } else {
+                console.error('initGame function not available'); // 디버깅용
+                return;
+            }
         } catch (error) {
             console.error('Error initializing game:', error); // 디버깅용
             return;
@@ -406,8 +427,8 @@ function createCharacter() {
     }
     
     // 게임 플레이어에 적용
-    if (game && game.player) {
-        game.player.character = characterData;
+    if (window.game && window.game.player) {
+        window.game.player.character = characterData;
         console.log('Character data applied to game player'); // 디버깅용
     } else {
         console.error('Game or game.player not available'); // 디버깅용
@@ -420,14 +441,19 @@ function createCharacter() {
     // 새 사용자이므로 게임 데이터 로드 건너뛰고 바로 무기 선택으로
     console.log('Character created, proceeding to weapon selection'); // 디버깅용
     
-    // 새 캐릭터이므로 무기 선택 패널 표시
+    // UI 업데이트
     setTimeout(() => {
-        console.log('About to show weapon selector'); // 디버깅용
-        if (typeof showWeaponSelector === 'function') {
-            showWeaponSelector();
-            console.log('Weapon selector shown'); // 디버깅용
+        if (typeof updateUI === 'function') {
+            updateUI();
+        }
+        
+        // 새 캐릭터이므로 무기 선택 상태 확인
+        console.log('About to check weapon selection state'); // 디버깅용
+        if (typeof checkWeaponSelectionState === 'function') {
+            checkWeaponSelectionState();
+            console.log('Weapon selection state checked'); // 디버깅용
         } else {
-            console.error('showWeaponSelector function not available'); // 디버깅용
+            console.error('checkWeaponSelectionState function not available'); // 디버깅용
         }
     }, 500);
     
@@ -476,8 +502,12 @@ function resetGame() {
         }
         
         // 게임 재시작
-        initGame();
-        showNotification('게임이 초기화되었습니다.', 'success');
+        if (typeof initGame === 'function') {
+            initGame();
+            showNotification('게임이 초기화되었습니다.', 'success');
+        } else {
+            console.error('initGame function not available');
+        }
     }
 }
 
@@ -491,7 +521,11 @@ function clearAllData() {
         updateAccountInfo();
         
         // 게임 재시작
-        initGame();
-        showNotification('모든 데이터가 삭제되었습니다.', 'info');
+        if (typeof initGame === 'function') {
+            initGame();
+            showNotification('모든 데이터가 삭제되었습니다.', 'info');
+        } else {
+            console.error('initGame function not available');
+        }
     }
 } 

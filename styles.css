@@ -1,0 +1,934 @@
+/* Base Styles */
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+    font-family: 'Noto Sans KR', Arial, sans-serif;
+    color: white;
+    overflow: hidden;
+}
+
+/* Game Container */
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#gameCanvas {
+    display: block;
+    background: transparent;
+    flex: 1;
+}
+
+/* UI Layout - Using CSS Grid for better responsive layout */
+#ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: grid;
+    grid-template-areas: 
+        "stats      .       quest"
+        "weapon     .       ."
+        "inventory  .       stage";
+    grid-template-columns: minmax(180px, 300px) 1fr minmax(180px, 300px);
+    grid-template-rows: auto auto 1fr;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* UI Panel Base Styles */
+.ui-panel {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #4a90e2;
+    border-radius: 8px;
+    padding: 10px;
+    pointer-events: auto;
+    backdrop-filter: blur(5px);
+    position: relative;
+}
+
+.ui-panel h3 {
+    text-align: center;
+    margin: 0 0 10px 0;
+    color: #4a90e2;
+    font-size: 14px;
+}
+
+/* Player Stats Panel */
+#playerStats {
+    grid-area: stats;
+    align-self: start;
+}
+
+/* Quest Panel */
+#questPanel {
+    grid-area: quest;
+    align-self: start;
+}
+
+/* Weapon Selector */
+#weaponSelector {
+    grid-area: weapon;
+    align-self: start;
+}
+
+/* Stage Info */
+#stageInfo {
+    grid-area: stage;
+    align-self: end;
+}
+
+/* Inventory Container with Toggle */
+#inventoryContainer {
+    grid-area: inventory;
+    align-self: end;
+    display: flex;
+    align-items: end;
+    gap: 0;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+#inventoryContainer.collapsed {
+    transform: translateX(calc(-100% + 40px));
+}
+
+/* Inventory Panel with improved layout */
+#inventory {
+    flex: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: auto;
+}
+
+#inventory.collapsed {
+    opacity: 0;
+}
+
+/* Inventory Toggle - positioned as flex item */
+#inventoryToggle {
+    width: 30px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #4a90e2;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    align-self: center;
+}
+
+#inventoryToggle.collapsed {
+    background: rgba(74, 144, 226, 0.8);
+    border-left: 2px solid #4a90e2;
+    border-radius: 8px;
+}
+
+#inventoryToggle:hover {
+    background: rgba(74, 144, 226, 0.6);
+}
+
+#inventoryToggle.collapsed:hover {
+    background: rgba(74, 144, 226, 1);
+}
+
+.toggle-arrow {
+    font-size: 16px;
+    color: #4a90e2;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.toggle-arrow.collapsed {
+    transform: rotate(180deg);
+    color: white;
+}
+
+/* Weapon Choice Styles */
+.weapon-choice {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.weapon-choice:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.weapon-choice.selected {
+    background: rgba(74, 144, 226, 0.3);
+    border: 2px solid #4a90e2;
+}
+
+.weapon-choice input[type="radio"] {
+    margin-right: 8px;
+}
+
+.weapon-stats {
+    font-size: 10px;
+    color: #bbb;
+    margin-left: 20px;
+}
+
+/* Status Bars */
+.stat-bar {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    margin: 5px 0;
+    overflow: hidden;
+}
+
+.stat-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.hp-bar { background: #e74c3c; }
+.mp-bar { background: #3498db; }
+.shield-bar { background: #f39c12; }
+.exp-bar { background: #2ecc71; }
+.boss-bar { background: #9b59b6; }
+
+/* Skill Buttons */
+.skill-btn {
+    background: #8e44ad;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 2px;
+    font-size: 12px;
+    position: relative;
+    min-width: 50px;
+}
+
+.skill-btn:hover:not(:disabled) {
+    background: #9b59b6;
+}
+
+.skill-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.skill-btn.ultimate {
+    background: #e74c3c;
+    border: 2px solid #f39c12;
+}
+
+.skill-btn.ultimate:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+/* Quest Styles */
+.quest-item {
+    padding: 8px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid #4a90e2;
+}
+
+.quest-completed {
+    border-left-color: #27ae60;
+    background: rgba(39, 174, 96, 0.2);
+}
+
+/* Equipment Styles */
+.equipment-slot {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #4a90e2;
+    border-radius: 4px;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.equipment-slot.equipped {
+    background: rgba(74, 144, 226, 0.3);
+    border-color: #27ae60;
+}
+
+.equipment-icon {
+    font-size: 16px;
+}
+
+/* Equipment Section Layout */
+.equipment-section {
+    margin: 8px 0;
+}
+
+.equipment-category {
+    display: block;
+    font-size: 11px;
+    color: #4a90e2;
+    margin-bottom: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.equipment-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0;
+}
+
+/* Specific row layouts */
+.weapon-row {
+    justify-content: center;
+}
+
+.armor-row-1 {
+    justify-content: center;
+}
+
+.armor-row-2 {
+    justify-content: center;
+}
+
+.accessory-row {
+    justify-content: center;
+}
+
+.equipment-detail {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.equipment-icon-large {
+    font-size: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: rgba(74, 144, 226, 0.2);
+    border: 2px solid #4a90e2;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.equipment-stats {
+    flex: 1;
+}
+
+.equipment-stats h3 {
+    margin: 0 0 10px 0;
+    color: #4a90e2;
+}
+
+.equipment-stats p {
+    margin: 0 0 15px 0;
+    color: #ccc;
+    font-style: italic;
+}
+
+.stat-line {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-line span:first-child {
+    color: #aaa;
+}
+
+.stat-line span:last-child {
+    color: white;
+    font-weight: bold;
+}
+
+/* Rarity Colors */
+.rarity-common { color: #ffffff; }
+.rarity-rare { color: #3498db; }
+.rarity-epic { color: #9b59b6; }
+.rarity-legendary { color: #f39c12; }
+
+/* Buttons */
+.btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.btn:hover {
+    background: #357abd;
+}
+
+.btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+/* Potion Buttons */
+.potion-btn {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 40px;
+    transition: all 0.2s;
+}
+
+.potion-btn:hover {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    transform: scale(1.05);
+}
+
+.potion-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Modals */
+#rankingModal, #equipmentModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: rgba(26, 26, 46, 0.95);
+    border: 2px solid #4a90e2;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Animations */
+.damage-number {
+    position: absolute;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ff6b6b;
+    pointer-events: none;
+    animation: damageFloat 1s ease-out forwards;
+}
+
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+.combat-effect {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #4a90e2;
+    border-radius: 50%;
+    animation: projectile 0.5s ease-out forwards;
+}
+
+@keyframes projectile {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+.planet {
+    position: absolute;
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.stars {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+/* Version Display */
+#version {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    z-index: 1000;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    #ui {
+        grid-template-columns: minmax(160px, 250px) 1fr minmax(160px, 250px);
+        gap: 15px;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    #ui {
+        grid-template-areas: 
+            "stats      quest"
+            "weapon     ."
+            "inventory  stage";
+        grid-template-columns: minmax(140px, 200px) minmax(140px, 200px);
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .ui-panel {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    #inventoryContainer {
+        grid-area: inventory;
+    }
+    
+    #inventoryToggle {
+        width: 25px;
+        height: 50px;
+    }
+    
+    #inventoryToggle.collapsed {
+        left: 5px;
+    }
+    
+    .toggle-arrow {
+        font-size: 14px;
+    }
+    
+    .modal-content {
+        width: 90%;
+        max-width: 400px;
+    }
+    
+    .equipment-detail {
+        gap: 8px;
+    }
+    
+    .equipment-icon-large {
+        font-size: 40px;
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    #ui {
+        grid-template-areas: 
+            "stats"
+            "quest"
+            "weapon"
+            "inventory"
+            "stage";
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .ui-panel {
+        padding: 6px;
+        font-size: 11px;
+    }
+    
+    #inventoryToggle {
+        width: 20px;
+        height: 40px;
+    }
+    
+    #inventoryToggle.collapsed {
+        left: 3px;
+    }
+    
+    .skill-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-width: 40px;
+    }
+    
+    .potion-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-width: 40px;
+    }
+    
+    .equipment-row {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .equipment-category {
+        width: 100%;
+        font-size: 10px;
+    }
+}
+
+@media (max-height: 600px) {
+    #ui {
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .ui-panel {
+        padding: 6px;
+    }
+    
+    .stat-bar {
+        height: 16px;
+    }
+    
+    .skill-btn, .potion-btn {
+        padding: 4px 6px;
+        font-size: 10px;
+        margin: 1px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    #gameContainer {
+        display: none;
+    }
+}
+
+/* High DPI / Retina Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .ui-panel {
+        border-width: 1px;
+    }
+    
+    .equipment-slot {
+        border-width: 1px;
+    }
+}
+
+/* Dark Mode Support (for future enhancement) */
+@media (prefers-color-scheme: dark) {
+    /* Already dark theme, no changes needed */
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Additional classes for cleaned HTML */
+.hidden {
+    display: none !important;
+}
+
+.skills-section {
+    margin: 10px 0;
+}
+
+.skills-title {
+    color: #e74c3c;
+    margin: 5px 0;
+}
+
+.skills-container {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.potions-section {
+    margin: 10px 0;
+}
+
+.potions-title {
+    color: #2ecc71;
+    margin: 5px 0;
+}
+
+.potions-container {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.auto-potion-settings {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
+
+.auto-potion-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.auto-potion-label {
+    font-size: 12px;
+}
+
+.trigger-label,
+.priority-label {
+    font-size: 10px;
+}
+
+.trigger-range {
+    width: 60px;
+}
+
+.trigger-text {
+    font-size: 10px;
+}
+
+.priority-select {
+    font-size: 10px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.weapon-select-btn {
+    font-size: 11px;
+    padding: 5px 8px;
+}
+
+.account-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.account-title {
+    margin: 5px 0;
+}
+
+.account-info {
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.account-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.account-btn {
+    font-size: 11px;
+    padding: 3px 6px;
+}
+
+.weapon-confirm {
+    margin-top: 15px;
+}
+
+.weapon-confirm-btn {
+    width: 100%;
+    padding: 10px;
+}
+
+.weapon-note {
+    margin-top: 10px;
+    font-size: 10px;
+    color: #bbb;
+}
+
+.modal-wrapper {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-modal {
+    width: 300px;
+    padding: 20px;
+}
+
+.input-field {
+    width: 100%;
+    margin: 5px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+}
+
+.login-message {
+    font-size: 12px;
+    margin: 5px 0;
+    color: #ff6666;
+}
+
+.login-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.character-modal {
+    width: 400px;
+    padding: 20px;
+}
+
+.character-field {
+    margin: 15px 0;
+}
+
+.color-inputs {
+    display: flex;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+.color-input {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.color-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.color-picker {
+    width: 50px;
+    height: 30px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.character-preview {
+    border: 1px solid #ccc;
+    background: #000;
+    border-radius: 4px;
+}
+
+.character-message {
+    font-size: 12px;
+    margin: 5px 0;
+    color: #ff6666;
+}
+
+.character-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Initialize stat bars with proper widths */
+#hpBar {
+    width: 100%;
+}
+
+#mpBar {
+    width: 100%;
+}
+
+#shieldBar {
+    width: 0%;
+}
+
+#expBar {
+    width: 0%;
+}
+
+#bossHpBar {
+    width: 100%;
+} 

@@ -1,9 +1,8 @@
 // UI 관련 함수들 - 알림, 모달, UI 업데이트 등
 
 // 알림 메시지 표시
-// showNotification 함수 - 토스트 메시지 비활성화
 function showNotification(message, type = 'info') {
-    // 토스트 메시지 비활성화됨
+    // 테스트 메시지 비활성화됨
 }
 
 // 데미지 숫자 표시
@@ -26,45 +25,45 @@ function showDamageNumber(x, y, damage) {
 
 // UI 업데이트
 function updateUI() {
-    if (!game || !game.player) return;
+    if (!window.game || !window.game.player) return;
     
     // 플레이어 정보 업데이트 (안전 체크 포함)
     const playerLevel = document.getElementById('playerLevel');
-    if (playerLevel) playerLevel.textContent = game.player.level;
+    if (playerLevel) playerLevel.textContent = window.game.player.level;
     
     const hpText = document.getElementById('hpText');
     if (hpText) {
-        const hp = Math.max(0, game.player.hp || 0);
-        const maxHp = game.player.maxHp || 100;
+        const hp = Math.max(0, window.game.player.hp || 0);
+        const maxHp = window.game.player.maxHp || 100;
         const hpPercent = maxHp > 0 ? Math.floor((hp / maxHp) * 100) : 0;
         hpText.textContent = `${hp}/${maxHp} (${hpPercent}%)`;
     }
     
     const mpText = document.getElementById('mpText');
     if (mpText) {
-        const mp = Math.max(0, game.player.mp || 0);
-        const maxMp = game.player.maxMp || 100;
+        const mp = Math.max(0, window.game.player.mp || 0);
+        const maxMp = window.game.player.maxMp || 100;
         const mpPercent = maxMp > 0 ? Math.floor((mp / maxMp) * 100) : 0;
         mpText.textContent = `${mp}/${maxMp} (${mpPercent}%)`;
     }
     
     const playerGold = document.getElementById('playerGold');
-    if (playerGold) playerGold.textContent = game.player.gold || 0;
+    if (playerGold) playerGold.textContent = window.game.player.gold || 0;
     
     const playerPower = document.getElementById('playerPower');
-    if (playerPower) playerPower.textContent = game.player.getTotalPower();
+    if (playerPower) playerPower.textContent = window.game.player.getTotalPower();
     
     const playerDefense = document.getElementById('playerDefense');
-    if (playerDefense) playerDefense.textContent = game.player.getTotalDefense();
+    if (playerDefense) playerDefense.textContent = window.game.player.getTotalDefense();
     
     // 방어막 정보 표시
     const shieldDisplay = document.getElementById('shieldDisplay');
     if (shieldDisplay) {
-        if (game.player.shield > 0) {
+        if (window.game.player.shield > 0) {
             const shieldText = document.getElementById('shieldText');
             const shieldBar = document.getElementById('shieldBar');
-            if (shieldText) shieldText.textContent = `${game.player.shield}/${game.player.maxShield}`;
-            if (shieldBar) shieldBar.style.width = `${(game.player.shield / game.player.maxShield) * 100}%`;
+            if (shieldText) shieldText.textContent = `${window.game.player.shield}/${window.game.player.maxShield}`;
+            if (shieldBar) shieldBar.style.width = `${(window.game.player.shield / window.game.player.maxShield) * 100}%`;
             shieldDisplay.style.display = 'block';
         } else {
             shieldDisplay.style.display = 'none';
@@ -72,10 +71,10 @@ function updateUI() {
     }
     
     // HP/MP 바 업데이트
-    const hp = Math.max(0, game.player.hp || 0);
-    const maxHp = game.player.maxHp || 100;
-    const mp = Math.max(0, game.player.mp || 0);
-    const maxMp = game.player.maxMp || 100;
+    const hp = Math.max(0, window.game.player.hp || 0);
+    const maxHp = window.game.player.maxHp || 100;
+    const mp = Math.max(0, window.game.player.mp || 0);
+    const maxMp = window.game.player.maxMp || 100;
     
     const hpPercent = maxHp > 0 ? (hp / maxHp) * 100 : 0;
     const mpPercent = maxMp > 0 ? (mp / maxMp) * 100 : 0;
@@ -86,8 +85,8 @@ function updateUI() {
     if (mpBar) mpBar.style.width = mpPercent + '%';
     
     // 경험치 바 업데이트
-    const experience = game.player.experience || 0;
-    const experienceToNext = game.player.experienceToNext || 100;
+    const experience = window.game.player.experience || 0;
+    const experienceToNext = window.game.player.experienceToNext || 100;
     const expPercent = experienceToNext > 0 ? (experience / experienceToNext) * 100 : 0;
     
     const expBar = document.getElementById('expBar');
@@ -101,8 +100,8 @@ function updateUI() {
     // 스테이지 정보 업데이트
     const currentStage = document.getElementById('currentStage');
     const currentPlanet = document.getElementById('currentPlanet');
-    if (currentStage) currentStage.textContent = game.stage;
-    if (currentPlanet) currentPlanet.textContent = game.getCurrentPlanet();
+    if (currentStage) currentStage.textContent = window.game.stage;
+    if (currentPlanet) currentPlanet.textContent = window.game.getCurrentPlanet();
     
     // 몬스터/보스 정보 업데이트
     const currentMonster = document.getElementById('currentMonster');
@@ -110,24 +109,24 @@ function updateUI() {
     const bossHpBar = document.getElementById('bossHpBar');
     const bossHpText = document.getElementById('bossHpText');
     
-    if (game.currentBoss) {
-        if (currentMonster) currentMonster.textContent = game.currentBoss.name;
-        if (monsterLevel) monsterLevel.textContent = game.currentBoss.level;
+    if (window.game.currentBoss) {
+        if (currentMonster) currentMonster.textContent = window.game.currentBoss.name;
+        if (monsterLevel) monsterLevel.textContent = window.game.currentBoss.level;
         
         // 안전한 HP 계산 (NaN 방지)
-        const bossHp = Math.max(0, game.currentBoss.hp || 0);
-        const bossMaxHp = Math.max(1, game.currentBoss.maxHp || 1); // 0으로 나누기 방지
+        const bossHp = Math.max(0, window.game.currentBoss.hp || 0);
+        const bossMaxHp = Math.max(1, window.game.currentBoss.maxHp || 1); // 0으로 나누기 방지
         const bossHpPercent = (bossHp / bossMaxHp) * 100;
         
         if (bossHpBar) bossHpBar.style.width = Math.max(0, bossHpPercent) + '%';
         if (bossHpText) bossHpText.textContent = `${bossHp}/${bossMaxHp} (${Math.max(0, bossHpPercent).toFixed(0)}%)`;
-    } else if (game.currentMonster) {
-        if (currentMonster) currentMonster.textContent = game.currentMonster.name;
-        if (monsterLevel) monsterLevel.textContent = game.currentMonster.level;
+    } else if (window.game.currentMonster) {
+        if (currentMonster) currentMonster.textContent = window.game.currentMonster.name;
+        if (monsterLevel) monsterLevel.textContent = window.game.currentMonster.level;
         
         // 안전한 HP 계산 (NaN 방지)
-        const monsterHp = Math.max(0, game.currentMonster.hp || 0);
-        const monsterMaxHp = Math.max(1, game.currentMonster.maxHp || 1); // 0으로 나누기 방지
+        const monsterHp = Math.max(0, window.game.currentMonster.hp || 0);
+        const monsterMaxHp = Math.max(1, window.game.currentMonster.maxHp || 1); // 0으로 나누기 방지
         const monsterHpPercent = (monsterHp / monsterMaxHp) * 100;
         
         if (bossHpBar) bossHpBar.style.width = Math.max(0, monsterHpPercent) + '%';
@@ -150,9 +149,6 @@ function updateUI() {
     if (weaponSelector && weaponSelector.style.display !== 'none' && typeof updateWeaponSelectorUI === 'function') {
         updateWeaponSelectorUI();
     }
-    
-    // 토글 버튼 위치는 더 이상 여기서 업데이트하지 않음 (성능 및 중복 방지)
-    // 필요한 경우에만 명시적으로 호출: 페이지 로드, 리사이즈, 토글 시
 }
 
 // 퀘스트 UI 업데이트
@@ -162,9 +158,9 @@ function updateQuestUI() {
     
     questList.innerHTML = '';
     
-    if (!game.quests) return;
+    if (!window.game || !window.game.quests) return;
     
-    game.quests.forEach(quest => {
+    window.game.quests.forEach(quest => {
         const questElement = document.createElement('div');
         questElement.className = 'quest-item';
         questElement.style.cssText = `
@@ -199,13 +195,13 @@ function updateQuestUI() {
 
 // 장비 UI 업데이트
 function updateEquipmentUI() {
-    if (!game || !game.player || !game.player.equipment) return;
+    if (!window.game || !window.game.player || !window.game.player.equipment) return;
     
-    Object.keys(game.player.equipment).forEach(slot => {
+    Object.keys(window.game.player.equipment).forEach(slot => {
         const slotElement = document.querySelector(`[data-slot="${slot}"]`);
         if (!slotElement) return; // 요소가 없으면 건너뛰기
         
-        const equipment = game.player.equipment[slot];
+        const equipment = window.game.player.equipment[slot];
         
         if (equipment) {
             slotElement.classList.add('equipped');
@@ -291,7 +287,7 @@ function showTimeRanking() {
 
 // 장비 정보 모달 표시
 function showEquipmentDetail(slot) {
-    const equipment = game.player.equipment[slot];
+    const equipment = window.game.player.equipment[slot];
     const modal = document.getElementById('equipmentModal');
     
     // 슬롯 정보 매핑
@@ -357,122 +353,78 @@ function closeEquipmentModal() {
 
 // 포션 UI 업데이트
 function updatePotionUI() {
-    if (!game || !game.healthPotions) return;
+    if (!window.game || !window.game.healthPotions) return;
     
     // 포션 개수 업데이트
     const smallPotionCount = document.getElementById('smallPotionCount');
     const mediumPotionCount = document.getElementById('mediumPotionCount');
     const largePotionCount = document.getElementById('largePotionCount');
     
-    if (smallPotionCount) smallPotionCount.textContent = game.healthPotions.small;
-    if (mediumPotionCount) mediumPotionCount.textContent = game.healthPotions.medium;
-    if (largePotionCount) largePotionCount.textContent = game.healthPotions.large;
+    if (smallPotionCount) smallPotionCount.textContent = window.game.healthPotions.small;
+    if (mediumPotionCount) mediumPotionCount.textContent = window.game.healthPotions.medium;
+    if (largePotionCount) largePotionCount.textContent = window.game.healthPotions.large;
 }
 
 // 포션 사용 함수
 function usePotion(type) {
-    game.useHealthPotion(type);
+    window.game.useHealthPotion(type);
     updatePotionUI();
 }
 
 // 자동 포션 설정 함수들
 function toggleAutoPotion() {
     const enabled = document.getElementById('autoPotionEnabled').checked;
-    game.autoPotionSettings.enabled = enabled;
-    // Auto potion notification removed
+    window.game.autoPotionSettings.enabled = enabled;
 }
 
 function updateAutoPotionPercent(value) {
-    game.autoPotionSettings.triggerPercent = parseInt(value);
+    window.game.autoPotionSettings.triggerPercent = parseInt(value);
     document.getElementById('autoPotionPercentText').textContent = value + '%';
 }
 
 function updateAutoPotionPriority() {
     const priority = document.getElementById('autoPotionPriority').value;
-    game.autoPotionSettings.priority = priority.split(',');
-    // Priority update notification removed
+    window.game.autoPotionSettings.priority = priority.split(',');
 }
 
 // 인벤토리 패널 토글 기능
 let isInventoryCollapsed = false;
 
-// 토글 버튼 위치 동적 계산 함수
-function updateToggleButtonPosition() {
-    const inventoryPanel = document.getElementById('inventory');
-    const toggleButton = document.getElementById('inventoryToggle');
-    
-    if (!inventoryPanel || !toggleButton) return;
-    
-    // 패널이 접혀있으면 위치 계산하지 않음 (CSS로 고정 위치 사용)
-    if (isInventoryCollapsed) {
-        return;
-    }
-    
-    // 패널의 실제 위치와 크기 계산
-    const panelRect = inventoryPanel.getBoundingClientRect();
-    
-    // 토글 버튼을 패널의 바로 오른쪽에 정확히 위치
-    // getBoundingClientRect는 실제 렌더링된 크기를 반환하므로 가장 정확함
-    const toggleButtonLeft = panelRect.right;
-    
-    toggleButton.style.left = toggleButtonLeft + 'px';
-    
-    console.log('Panel position updated:', {
-        panelRect: panelRect,
-        panelLeft: panelRect.left,
-        panelRight: panelRect.right,
-        panelWidth: panelRect.width,
-        toggleLeft: toggleButtonLeft,
-        screenWidth: window.innerWidth,
-        collapsed: isInventoryCollapsed
-    });
-}
-
 function toggleInventoryPanel() {
+    const inventoryContainer = document.getElementById('inventoryContainer');
     const inventoryPanel = document.getElementById('inventory');
     const toggleButton = document.getElementById('inventoryToggle');
     const toggleArrow = toggleButton.querySelector('.toggle-arrow');
     
-    if (!inventoryPanel || !toggleButton || !toggleArrow) return;
+    if (!inventoryContainer || !inventoryPanel || !toggleButton || !toggleArrow) return;
     
     isInventoryCollapsed = !isInventoryCollapsed;
     
     if (isInventoryCollapsed) {
-        // 패널 숨기기
+        inventoryContainer.classList.add('collapsed');
         inventoryPanel.classList.add('collapsed');
         toggleButton.classList.add('collapsed');
         toggleArrow.classList.add('collapsed');
         toggleButton.title = '장비 패널 열기 (Ctrl+I)';
         toggleButton.setAttribute('aria-label', '장비 패널 열기');
         
-        // 토글 버튼을 즉시 왼쪽 끝으로 이동 (CSS의 collapsed 클래스가 처리)
-        // left 값을 명시적으로 제거해서 CSS가 적용되도록 함
-        toggleButton.style.left = '';
-        
-        // 접힘 상태 알림
         if (typeof showNotification === 'function') {
             showNotification('장비 패널이 최소화되었습니다', 'info');
         }
     } else {
-        // 패널 보이기 전에 먼저 토글 버튼 위치를 계산해서 설정
-        // 이렇게 하면 애니메이션 중에 위치가 바뀌지 않음
-        setTimeout(() => {
-            updateToggleButtonPosition();
-        }, 50); // 패널이 펼쳐지기 시작할 때 즉시 계산
-        
+        inventoryContainer.classList.remove('collapsed');
         inventoryPanel.classList.remove('collapsed');
         toggleButton.classList.remove('collapsed');
         toggleArrow.classList.remove('collapsed');
         toggleButton.title = '장비 패널 닫기 (Ctrl+I)';
         toggleButton.setAttribute('aria-label', '장비 패널 닫기');
         
-        // 펼침 상태 알림 (더 간단히)
         if (typeof showNotification === 'function') {
-            showNotification('장비 패널이 열렸습니다', 'info');
+            showNotification('장비 패널을 열었습니다', 'info');
         }
     }
     
-    // 상태 저장 (localStorage)
+    // 상태 저장
     try {
         localStorage.setItem('inventoryCollapsed', isInventoryCollapsed);
     } catch (e) {
@@ -480,7 +432,7 @@ function toggleInventoryPanel() {
     }
 }
 
-// 키보드 단축키 지원 (Ctrl+I)
+// 키보드 단축키 지원(Ctrl+I)
 document.addEventListener('keydown', function(event) {
     if (event.ctrlKey && event.key.toLowerCase() === 'i') {
         event.preventDefault();
@@ -493,48 +445,23 @@ function restoreInventoryState() {
     try {
         const savedState = localStorage.getItem('inventoryCollapsed');
         if (savedState === 'true') {
-            // 상태만 설정하고 토글 함수 호출해서 UI 적용 (알림 없이)
-            isInventoryCollapsed = false; // 토글 함수에서 반전시키므로 false로 설정
+            isInventoryCollapsed = false;
             
-            // 임시로 showNotification을 비활성화
             const originalShowNotification = window.showNotification;
-            window.showNotification = function() {}; // 빈 함수로 대체
+            window.showNotification = function() {};
             
             toggleInventoryPanel();
             
-            // showNotification 복원
-            if (originalShowNotification) {
+            setTimeout(() => {
                 window.showNotification = originalShowNotification;
-            }
+            }, 100);
         }
     } catch (e) {
         console.log('Failed to restore inventory state:', e);
     }
 }
 
-// 페이지 로드 완료 시 상태 복원
-document.addEventListener('DOMContentLoaded', function() {
-    // 약간의 지연을 두고 상태 복원 (DOM이 완전히 준비된 후)
-    setTimeout(() => {
-        restoreInventoryState();
-        // 토글 버튼 위치 초기 설정 (패널이 열려있을 때만)
-        if (!isInventoryCollapsed) {
-            updateToggleButtonPosition();
-        }
-    }, 100);
-});
-
-// 화면 크기 변경 시 토글 버튼 위치 업데이트
-window.addEventListener('resize', function() {
-    // 리사이즈 완료 후 위치 업데이트 (패널이 열려있을 때만)
-    if (!isInventoryCollapsed) {
-        setTimeout(updateToggleButtonPosition, 100);
-    }
-});
-
-// 게임 로드 완료 시에도 위치 업데이트
+// 윈도우 로드 시 초기화
 window.addEventListener('load', function() {
-    if (!isInventoryCollapsed) {
-        setTimeout(updateToggleButtonPosition, 500);
-    }
+    restoreInventoryState();
 });
