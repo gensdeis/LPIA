@@ -63,6 +63,60 @@
             bottom: 20px;
             left: 20px;
             min-width: 300px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform-origin: left center;
+        }
+
+        #inventory.collapsed {
+            transform: translateX(-320px);
+            opacity: 0.1;
+        }
+
+        #inventoryToggle {
+            position: absolute;
+            bottom: 20px;
+            left: 340px;
+            width: 30px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #4a90e2;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            transition: left 0.3s ease, background-color 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #inventoryToggle.collapsed {
+            left: 40px;
+            background: rgba(74, 144, 226, 0.8);
+            border-left: 2px solid #4a90e2;
+            border-radius: 8px;
+        }
+
+        #inventoryToggle:hover {
+            background: rgba(74, 144, 226, 0.6);
+        }
+
+        #inventoryToggle.collapsed:hover {
+            background: rgba(74, 144, 226, 1);
+        }
+
+        .toggle-arrow {
+            font-size: 16px;
+            color: #4a90e2;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .toggle-arrow.collapsed {
+            transform: rotate(180deg);
+            color: white;
         }
 
         #weaponSelector {
@@ -407,6 +461,53 @@
             cursor: not-allowed;
             transform: none;
         }
+
+        /* 모바일 대응 */
+        @media (max-width: 768px) {
+            #inventory {
+                min-width: 280px;
+                bottom: 10px;
+                left: 10px;
+            }
+            
+            #inventory.collapsed {
+                transform: translateX(-300px); /* 280px 패널 + 20px 여유분으로 완전히 숨김 */
+            }
+            
+            #inventoryToggle {
+                left: 310px; /* 10px(패널 left) + 280px(패널 width) + 20px(간격) = 310px */
+                bottom: 10px;
+                width: 35px;
+                height: 70px;
+            }
+            
+            #inventoryToggle.collapsed {
+                left: 30px;
+            }
+            
+            .toggle-arrow {
+                font-size: 18px;
+            }
+        }
+
+        /* 매우 작은 화면 대응 */
+        @media (max-width: 480px) {
+            #inventory {
+                min-width: 250px;
+            }
+            
+            #inventory.collapsed {
+                transform: translateX(-270px); /* 250px 패널 + 20px 여유분으로 완전히 숨김 */
+            }
+            
+            #inventoryToggle {
+                left: 280px; /* 10px(패널 left) + 250px(패널 width) + 20px(간격) = 280px */
+            }
+            
+            #inventoryToggle.collapsed {
+                left: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -575,6 +676,16 @@
                     <div class="equipment-slot" data-slot="necklace" title="목걸이" onclick="showEquipmentDetail('necklace')">📿</div>
                     <div class="equipment-slot" data-slot="ring" title="반지" onclick="showEquipmentDetail('ring')">💍</div>
                 </div>
+            </div>
+            
+            <!-- 인벤토리 토글 버튼 -->
+            <div id="inventoryToggle" onclick="toggleInventoryPanel()" 
+                 title="장비 패널 토글 (Ctrl+I)" 
+                 tabindex="0" 
+                 role="button" 
+                 aria-label="장비 패널 토글"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleInventoryPanel();}">
+                <span class="toggle-arrow">◀</span>
             </div>
 
             <!-- 스테이지 정보 패널 -->

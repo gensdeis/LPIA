@@ -354,11 +354,16 @@ function closeEquipmentModal() {
 
 // 포션 UI 업데이트
 function updatePotionUI() {
-    if (!game) return;
+    if (!game || !game.healthPotions) return;
     
-    document.getElementById('smallPotionCount').textContent = game.healthPotions.small;
-    document.getElementById('mediumPotionCount').textContent = game.healthPotions.medium;
-    document.getElementById('largePotionCount').textContent = game.healthPotions.large;
+    // 포션 개수 업데이트
+    const smallPotionCount = document.getElementById('smallPotionCount');
+    const mediumPotionCount = document.getElementById('mediumPotionCount');
+    const largePotionCount = document.getElementById('largePotionCount');
+    
+    if (smallPotionCount) smallPotionCount.textContent = game.healthPotions.small;
+    if (mediumPotionCount) mediumPotionCount.textContent = game.healthPotions.medium;
+    if (largePotionCount) largePotionCount.textContent = game.healthPotions.large;
 }
 
 // 포션 사용 함수
@@ -384,3 +389,87 @@ function updateAutoPotionPriority() {
     game.autoPotionSettings.priority = priority.split(',');
     // Priority update notification removed
 }
+
+// 인벤토리 패널 토글 기능
+let isInventoryCollapsed = false;
+
+function toggleInventoryPanel() {
+    const inventoryPanel = document.getElementById('inventory');
+    const toggleButton = document.getElementById('inventoryToggle');
+    const toggleArrow = toggleButton.querySelector('.toggle-arrow');
+    
+    if (!inventoryPanel || !toggleButton || !toggleArrow) return;
+    
+    isInventoryCollapsed = !isInventoryCollapsed;
+    
+    if (isInventoryCollapsed) {
+        // 패널 숨기기
+        inventoryPanel.classList.add('collapsed');
+        toggleButton.classList.add('collapsed');
+        toggleArrow.classList.add('collapsed');
+        toggleButton.title = '장비 패널 열기 (Ctrl+I)';
+        toggleButton.setAttribute('aria-label', '장비 패널 열기');
+        
+        // 접힘 상태 알림
+        if (typeof showNotification === 'function') {
+            showNotification('장비 패널이 최소화되었습니다', 'info');
+        }
+    } else {
+        // 패널 보이기
+        inventoryPanel.classList.remove('collapsed');
+        toggleButton.classList.remove('collapsed');
+        toggleArrow.classList.remove('collapsed');
+        toggleButton.title = '장비 패널 닫기 (Ctrl+I)';
+        toggleButton.setAttribute('aria-label', '장비 패널 닫기');
+        
+        // 펼침 상태 알림 (더 간단히)
+        if (typeof showNotification === 'function') {
+            showNotification('장비 패널이 열렸습니다', 'info');
+        }
+    }
+    
+    // 상태 저장 (localStorage)
+    try {
+        localStorage.setItem('inventoryCollapsed', isInventoryCollapsed);
+    } catch (e) {
+        console.log('Failed to save inventory state:', e);
+    }
+}
+
+// 키보드 단축키 지원 (Ctrl+I)
+document.addEventListener('keydown', function(event) {
+    if (event.ctrlKey && event.key.toLowerCase() === 'i') {
+        event.preventDefault();
+        toggleInventoryPanel();
+    }
+});
+
+// 페이지 로드 시 인벤토리 상태 복원
+function restoreInventoryState() {
+    try {
+        const savedState = localStorage.getItem('inventoryCollapsed');
+        if (savedState === 'true') {
+            // 상태만 설정하고 토글 함수 호출해서 UI 적용 (알림 없이)
+            isInventoryCollapsed = false; // 토글 함수에서 반전시키므로 false로 설정
+            
+            // 임시로 showNotification을 비활성화
+            const originalShowNotification = window.showNotification;
+            window.showNotification = function() {}; // 빈 함수로 대체
+            
+            toggleInventoryPanel();
+            
+            // showNotification 복원
+            if (originalShowNotification) {
+                window.showNotification = originalShowNotification;
+            }
+        }
+    } catch (e) {
+        console.log('Failed to restore inventory state:', e);
+    }
+}
+
+// 페이지 로드 완료 시 상태 복원
+document.addEventListener('DOMContentLoaded', function() {
+    // 약간의 지연을 두고 상태 복원 (DOM이 완전히 준비된 후)
+    setTimeout(restoreInventoryState, 100);
+});
