@@ -90,7 +90,10 @@ class GameUseCase {
 
     // 다음 5레벨 단위 타겟 계산 함수
     calculateNextLevelTarget(currentLevel) {
+        // 현재 레벨이 5의 배수이면 다음 5레벨 단위로
+        // 아니면 가장 가까운 5의 배수로 올림
         const nextTarget = Math.ceil(currentLevel / 5) * 5;
+        // 현재 레벨이 이미 5의 배수라면 다음 5레벨 단위로
         return nextTarget === currentLevel ? currentLevel + 5 : nextTarget;
     }
 
@@ -112,6 +115,8 @@ class GameUseCase {
 
         // 퀘스트 초기화 후 현재 상태 체크
         this.checkQuestStatus();
+        
+        console.log(`Quests initialized. Player level: ${this.player.level}, Level target: ${levelTarget}`);
     }
 
     // 현재 플레이어 상태에 따른 퀘스트 상태 업데이트
@@ -1311,6 +1316,26 @@ class GameUseCase {
         showNotification(`New quests! Level target: ${levelTarget}`, 'info');
     }
 
+    // 게임 로드 시 레벨 퀘스트 타겟 업데이트
+    updateLevelQuestTarget() {
+        const levelQuest = this.quests.find(quest => quest.id === 5);
+        if (levelQuest) {
+            const currentLevel = this.player.level;
+            const currentTarget = levelQuest.target;
+            
+            // 현재 레벨이 타겟보다 높거나 같으면서 퀘스트가 완료되지 않은 경우
+            if (currentLevel >= currentTarget && !levelQuest.completed) {
+                // 현재 레벨에서 다음 5레벨 타겟 계산
+                const newTarget = this.calculateNextLevelTarget(currentLevel);
+                levelQuest.target = newTarget;
+                levelQuest.description = `${newTarget} 레벨 달성`;
+                
+                console.log(`Level quest updated: Current level ${currentLevel}, New target ${newTarget}`);
+                showNotification(`Level quest updated to ${newTarget}!`, 'info');
+            }
+        }
+    }
+
     getCurrentPlanet() {
         return this.planetNames[Math.floor(this.stage / 100) % this.planetNames.length];
     }
@@ -1340,6 +1365,9 @@ class GameUseCase {
             // 오프라인 진행 계산
             const offlineTime = Date.now() - gameData.timestamp;
             this.processOfflineProgress(offlineTime);
+            
+            // 로드 후 레벨 퀘스트 타겟 수정 (현재 레벨에 맞는 타겟으로 업데이트)
+            this.updateLevelQuestTarget();
             
             // 게임 로드 후 퀘스트 상태 체크 (레벨, 골드 등 현재 상태와 동기화)
             this.checkQuestStatus();
