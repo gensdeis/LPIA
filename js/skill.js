@@ -97,11 +97,44 @@ class SkillSystem {
     
     // 1번 스킬: 미사일 공격
     castMissileStrike(player, game) {
-        const target = game.currentBoss || game.currentMonster;
-        if (!target) return;
+        const maxMissiles = 3; // 최대 3개 미사일
+        let targets = [];
         
-        const damage = Math.floor(player.getTotalPower() * 1.5) + 50; // 1.5배 + 고정 50 데미지
-        game.createSkillProjectile(damage, 'missile', target);
+        // 타겟 우선순위: 보스 > 몬스터들
+        if (game.currentBoss && !game.currentBoss.isDead) {
+            targets.push(game.currentBoss);
+        }
+        
+        // 살아있는 몬스터들을 타겟에 추가
+        if (game.monsters && game.monsters.length > 0) {
+            const aliveMonsters = game.monsters.filter(monster => 
+                !monster.isDead && !monster.deathAnimation
+            );
+            targets = targets.concat(aliveMonsters);
+        }
+        
+        // 최대 3개까지만 선택
+        const selectedTargets = targets.slice(0, maxMissiles);
+        
+        if (selectedTargets.length === 0) {
+            if (typeof showNotification === 'function') {
+                showNotification('No targets for missile strike!', 'info');
+            }
+            return;
+        }
+        
+        // 각 타겟에게 미사일 발사
+        selectedTargets.forEach((target, index) => {
+            const damage = Math.floor(player.getTotalPower() * 1.5) + 50;
+            setTimeout(() => {
+                game.createSkillProjectile(damage, 'missile', target);
+                game.addMissileTarget(target); // 미사일 타겟으로 등록
+            }, index * 200); // 200ms 간격으로 발사
+        });
+        
+        if (typeof showNotification === 'function') {
+            showNotification(`${selectedTargets.length} missiles launched!`, 'success');
+        }
     }
     
     // 2번 스킬: 에너지 방어막
@@ -115,11 +148,20 @@ class SkillSystem {
     
     // 3번 스킬: 행성파괴 레이저
     castPlanetDestroyerLaser(player, game) {
-        const target = game.currentBoss || game.currentMonster;
-        if (!target) return;
-        
-        const damage = Math.floor(player.getTotalPower() * 3) + 200; // 3배 + 고정 200 데미지
-        game.createPlanetDestroyerLaser(damage, target);
+        // 보스가 있으면 보스를 우선 타겟, 없으면 모든 몬스터 타겟
+        if (game.currentBoss) {
+            const damage = Math.floor(player.getTotalPower() * 3) + 200;
+            game.createPlanetDestroyerLaser(damage, game.currentBoss);
+        } else if (game.monsters && game.monsters.length > 0) {
+            // 모든 살아있는 몬스터에게 레이저 발사
+            const aliveMonsters = game.monsters.filter(monster => !monster.isDead && !monster.deathAnimation);
+            if (aliveMonsters.length > 0) {
+                aliveMonsters.forEach(monster => {
+                    const damage = Math.floor(player.getTotalPower() * 3) + 200;
+                    game.createPlanetDestroyerLaser(damage, monster);
+                });
+            }
+        }
     }
     
     // 쿨다운 상태 가져오기

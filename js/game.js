@@ -50,12 +50,22 @@ class GameUseCase {
             moveSpeed: 0.002 // 화면 비율 기준 이동 속도
         };
         
+        // 스킬 시스템 (늦은 초기화)
+        this.skillSystem = null;
+        
+        // 플레이어 피격 효과
+        this.playerHitEffect = false;
+        
         // 자동 포션 사용 설정
         this.autoPotionSettings = {
-            enabled: false,
-            triggerPercent: 50, // 50% 이하일 때 사용
-            priority: ['small', 'medium', 'large'] // 사용 우선순위
+            enabled: true,
+            triggerPercent: 30, // HP 30% 이하일 때 사용
+            priority: ['large', 'medium', 'small'] // 큰 포션부터 우선 사용
         };
+        
+        // 미사일 추적 시스템
+        this.activeMissiles = []; // 현재 날아가고 있는 미사일들
+        this.missileTargets = new Set(); // 미사일 타겟인 적들
         
         // 스테이지 시작 상태 저장 (사망 시 복원용)
         this.stageStartState = null;
@@ -273,22 +283,194 @@ class GameUseCase {
     }
 
     attackMonster() {
-        // 현재 타깃이 없으면 첫 번째 살아있는 몬스터를 선택
+        // 살아있는 몬스터가 없으면 종료
+        if (!this.monsters || this.monsters.length === 0) return false;
+        
+        let attackedAnyMonster = false;
+        
+        // 무기 타입에 따른 다른 공격 전략
+        if (this.player.selectedWeaponType === 'melee') {
+            // 근접 무기: 가장 가까운 몬스터 1개만 공격
+            const nearestMonster = this.findNearestMonsterInRange();
+            if (nearestMonster) {
+                if (this.performPlayerAttackOnMonster(nearestMonster)) {
+                    attackedAnyMonster = true;
+                }
+            }
+        } else if (this.player.selectedWeaponType === 'ranged') {
+            // 원거리 무기: 모든 살아있는 몬스터에게 공격
+            this.monsters.forEach(monster => {
+                if (!monster.isDead && !monster.deathAnimation) {
+                    if (this.performPlayerAttackOnMonster(monster)) {
+                        attackedAnyMonster = true;
+                    }
+                }
+            });
+        }
+        
+        // 모든 살아있는 몬스터들이 개별적으로 반격
+        this.monsters.forEach(monster => {
+            if (!monster.isDead && monster.hp > 0 && monster.canAttack()) {
+                this.performMonsterAttackFromSpecific(monster);
+            }
+        });
+
+        // UI 표시용 currentMonster 업데이트 (첫 번째 살아있는 몬스터)
         if (!this.currentMonster || this.currentMonster.isDead) {
             this.currentMonster = this.monsters.find(monster => !monster.isDead) || null;
         }
+
+        return attackedAnyMonster;
+    }
+
+    // 특정 몬스터에 대한 플레이어 공격 수행
+    performPlayerAttackOnMonster(targetMonster) {
+        if (!targetMonster) return false;
         
-        if (!this.currentMonster || this.currentMonster.deathAnimation) return false;
-
-        // 플레이어 공격
-        this.performPlayerAttack();
-
-        // 몬스터가 살아있으면 반격
-        if (this.currentMonster && this.currentMonster.hp > 0 && this.currentMonster.canAttack()) {
-            this.performMonsterAttack();
+        // 미사일 타겟인 경우 일반 공격 금지
+        if (this.isMissileTarget(targetMonster)) {
+            return false; // 미사일이 날아가고 있는 타겟에게는 공격하지 않음
         }
 
-        return false;
+        let attacked = false;
+
+        // 선택된 무기 타입에 따른 공격
+        if (this.player.selectedWeaponType === 'melee') {
+            // 근접 무기 공격 (광선검) - 가장 가까운 몬스터만 공격
+            if (this.player.equipment.lightsaber) {
+                // 모든 몬스터 중 가장 가까운 것을 찾아서 공격
+                const nearestMonster = this.findNearestMonsterInRange();
+                if (nearestMonster && nearestMonster === targetMonster) {
+                    const swordDamage = Math.floor(this.player.getWeaponPower() * 0.5) + Math.floor(Math.random() * 10) + 15;
+                    this.performMeleeAttack(swordDamage, targetMonster);
+                    attacked = true;
+                }
+            }
+        } else if (this.player.selectedWeaponType === 'ranged') {
+            // 원거리 무기 공격 (레이저총) - 모든 몬스터에게 공격 가능
+            if (this.player.equipment.laser) {
+                this.performRangedAttackOnMonster(targetMonster);
+                attacked = true;
+            }
+        }
+
+        return attacked;
+    }
+
+    // 근접 공격 범위 내의 가장 가까운 몬스터 찾기
+    findNearestMonsterInRange() {
+        const meleeRange = 0.1; // 근접 공격 범위
+        let nearestMonster = null;
+        let nearestDistance = Infinity;
+        
+        this.monsters.forEach(monster => {
+            if (!monster.isDead && !monster.deathAnimation) {
+                const distance = this.getDistanceToTarget(monster);
+                if (distance <= meleeRange && distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestMonster = monster;
+                }
+            }
+        });
+        
+        return nearestMonster;
+    }
+
+    // 특정 몬스터에 대한 원거리 공격
+    performRangedAttackOnMonster(target) {
+        const weapon = this.player.equipment.laser;
+        if (!weapon) return;
+        
+        // 사정거리 체크
+        const distance = this.getDistanceToTarget(target);
+        const maxRange = 0.4; // 원거리 무기 최대 사정거리
+        if (distance > maxRange) {
+            // 사정거리 밖이면 공격하지 않음
+            return;
+        }
+        
+        // 명중률 체크
+        const hitChance = Math.random() * 100;
+        if (hitChance > weapon.accuracy) {
+            // 명중 실패 - 몬스터 위에 Miss 텍스트 표시
+            this.showMissText(target);
+            return;
+        }
+        
+        // 기본 데미지 (원거리는 낮은 데미지이지만 무기별 공격력 계산 사용)
+        let damage = Math.floor(this.player.getWeaponPower() * 0.35) + Math.floor(Math.random() * 8);
+        
+        // 치명타 체크
+        const critChance = Math.random() * 100;
+        let isCritical = false;
+        if (critChance <= weapon.criticalChance) {
+            damage *= 2; // 치명타 시 2배 데미지
+            isCritical = true;
+        }
+        
+        // 특정 몬스터를 타겟으로 하는 투사체 생성
+        this.createPlayerProjectileToMonster(damage, isCritical, target);
+    }
+
+    // 특정 몬스터를 타겟으로 하는 투사체 생성
+    createPlayerProjectileToMonster(damage, isCritical, targetMonster) {
+        const canvas = document.getElementById('gameCanvas');
+        const startX = canvas.width * this.playerPosition.x + 20;
+        const startY = canvas.height * this.playerPosition.y;
+        
+        const targetX = canvas.width * targetMonster.positionX;
+        const targetY = canvas.height * targetMonster.positionY;
+
+        const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'laser', 20);
+        projectile.isCritical = isCritical;
+        projectile.targetMonster = targetMonster; // 특정 몬스터 타겟 설정
+        projectile.targetBoss = null; // 보스가 아님을 명시
+        this.projectiles.push(projectile);
+        
+        // 치명타 시 특별한 알림
+        if (isCritical) {
+            showNotification(`Critical Hit! ${damage} damage!`, 'success');
+        }
+    }
+
+    // 특정 몬스터의 반격
+    performMonsterAttackFromSpecific(monster) {
+        const attackData = monster.performAttack();
+        
+        if (attackData.damage <= 0) return; // 공격하지 않는 경우
+        
+        if (attackData.type === 'melee') {
+            // 근접 공격 - 빠른 근접 투사체
+            this.createMonsterMeleeAttackFromSpecific(attackData.damage, monster);
+        } else {
+            // 원거리 공격 - 투사체 생성
+            this.createMonsterProjectileFromSpecific(attackData.damage, monster);
+        }
+    }
+
+    createMonsterMeleeAttackFromSpecific(damage, monster) {
+        const canvas = document.getElementById('gameCanvas');
+        
+        const startX = canvas.width * monster.positionX;
+        const startY = canvas.height * monster.positionY;
+        const targetX = canvas.width * this.playerPosition.x;
+        const targetY = canvas.height * this.playerPosition.y;
+
+        // 몬스터 근접 공격은 빠른 속도
+        const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'monster_melee', 20);
+        this.monsterProjectiles.push(projectile);
+    }
+
+    createMonsterProjectileFromSpecific(damage, monster) {
+        const canvas = document.getElementById('gameCanvas');
+        
+        const startX = canvas.width * monster.positionX;
+        const startY = canvas.height * monster.positionY;
+        const targetX = canvas.width * this.playerPosition.x;
+        const targetY = canvas.height * this.playerPosition.y;
+
+        const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'fireball', 10);
+        this.monsterProjectiles.push(projectile);
     }
 
     performPlayerAttack() {
@@ -565,6 +747,13 @@ class GameUseCase {
     updateProjectiles() {
         // 플레이어 투사체 업데이트
         this.projectiles = this.projectiles.filter(projectile => {
+            // 좌표 안전성 검사 - 무효한 좌표가 있으면 투사체 제거
+            if (!isFinite(projectile.x) || !isFinite(projectile.y) || 
+                !isFinite(projectile.velocityX) || !isFinite(projectile.velocityY)) {
+                console.warn('Invalid projectile coordinates detected, removing:', projectile);
+                return false; // 투사체 제거
+            }
+            
             const hit = projectile.update();
             if (hit) {
                 let target = null;
@@ -601,6 +790,13 @@ class GameUseCase {
 
         // 몬스터 투사체 업데이트
         this.monsterProjectiles = this.monsterProjectiles.filter(projectile => {
+            // 좌표 안전성 검사 - 무효한 좌표가 있으면 투사체 제거
+            if (!isFinite(projectile.x) || !isFinite(projectile.y) || 
+                !isFinite(projectile.velocityX) || !isFinite(projectile.velocityY)) {
+                console.warn('Invalid monster projectile coordinates detected, removing:', projectile);
+                return false; // 투사체 제거
+            }
+            
             const hit = projectile.update();
             if (hit) {
                 this.dealDamageToPlayer(projectile.damage);
@@ -626,6 +822,11 @@ class GameUseCase {
 
     performPlayerAttackOnBoss() {
         if (!this.currentBoss) return;
+        
+        // 미사일 타겟인 경우 일반 공격 금지
+        if (this.isMissileTarget(this.currentBoss)) {
+            return; // 미사일이 날아가고 있는 타겟에게는 공격하지 않음
+        }
 
         // 선택된 무기 타입에 따른 공격
         if (this.player.selectedWeaponType === 'melee') {
@@ -928,12 +1129,32 @@ class GameUseCase {
             }
         }
         
-        // 현재 위치에서 목표 위치로 부드럽게 이동
+        // 현재 위치에서 목표 위치로 부드럽게 이동 - 안전성 검사 포함
         const moveX = this.playerPosition.targetX - this.playerPosition.x;
         const moveY = this.playerPosition.targetY - this.playerPosition.y;
         
-        this.playerPosition.x += moveX * this.playerPosition.moveSpeed * 60; // 120fps에서 60fps로 변경 (절반으로 느리게)
-        this.playerPosition.y += moveY * this.playerPosition.moveSpeed * 60;
+        // 좌표와 이동값 유효성 검사
+        if (isFinite(moveX) && isFinite(moveY) && 
+            isFinite(this.playerPosition.x) && isFinite(this.playerPosition.y) && 
+            isFinite(this.playerPosition.targetX) && isFinite(this.playerPosition.targetY)) {
+            
+            const newX = this.playerPosition.x + moveX * this.playerPosition.moveSpeed * 60;
+            const newY = this.playerPosition.y + moveY * this.playerPosition.moveSpeed * 60;
+            
+            // 새로운 위치 유효성 검사 및 범위 제한
+            if (isFinite(newX) && isFinite(newY)) {
+                this.playerPosition.x = Math.max(0, Math.min(1, newX)); // 0-1 범위로 제한
+                this.playerPosition.y = Math.max(0, Math.min(1, newY)); // 0-1 범위로 제한
+            } else {
+                console.warn('Invalid player position calculated, keeping current position');
+            }
+        } else {
+            console.warn('Invalid player movement parameters, resetting to center');
+            this.playerPosition.x = 0.5;
+            this.playerPosition.y = 0.5;
+            this.playerPosition.targetX = 0.5;
+            this.playerPosition.targetY = 0.5;
+        }
     }
     
     dropHealthPotion(isBoss = false) {
@@ -1262,6 +1483,9 @@ class GameUseCase {
             }
             
             this.projectiles.push(projectile);
+            
+            // 활성 미사일 목록에 추가
+            this.activeMissiles.push(projectile);
         } else {
             const projectile = new Projectile(startX, startY, targetX, targetY, damage, type, 15);
             projectile.isSkill = true;
@@ -1384,19 +1608,30 @@ class GameUseCase {
     performBodySlam(target) {
         const canvas = document.getElementById('gameCanvas');
         
-        // 타겟 위치 계산
+        // 타겟 위치 계산 - 안전성 검사 포함
         let targetX, targetY;
         if (target === this.currentBoss) {
             targetX = canvas.width * 0.65;
             targetY = canvas.height * 0.5;
-        } else {
+        } else if (target && isFinite(target.positionX) && isFinite(target.positionY)) {
             targetX = canvas.width * target.positionX;
             targetY = canvas.height * target.positionY;
+        } else {
+            console.warn('Invalid target position for body slam:', target);
+            // 기본 위치로 설정
+            targetX = canvas.width * 0.7;
+            targetY = canvas.height * 0.5;
         }
         
-        // 플레이어 원래 위치
+        // 플레이어 원래 위치 - 안전성 검사 포함
         const originalX = canvas.width * this.playerPosition.x;
         const originalY = canvas.height * this.playerPosition.y;
+        
+        // 좌표 유효성 최종 검사
+        if (!isFinite(targetX) || !isFinite(targetY) || !isFinite(originalX) || !isFinite(originalY)) {
+            console.warn('Invalid coordinates for body slam, cancelling:', { targetX, targetY, originalX, originalY });
+            return;
+        }
         
         // 몸통박치기 애니메이션 데이터
         this.bodySlamAnimation = {
@@ -1500,6 +1735,43 @@ class GameUseCase {
             this.saberSwingAnimation = null;
         }
     }
+    
+    // 미사일 타겟 관리 메서드들
+    addMissileTarget(target) {
+        this.missileTargets.add(target);
+    }
+    
+    removeMissileTarget(target) {
+        this.missileTargets.delete(target);
+    }
+    
+    isMissileTarget(target) {
+        return this.missileTargets.has(target);
+    }
+    
+    // 미사일 추적 시스템 업데이트
+    updateMissileTracking() {
+        // 비활성화된 미사일들을 activeMissiles에서 제거
+        this.activeMissiles = this.activeMissiles.filter(missile => missile.active);
+        
+        // 타겟이 죽었거나 해당 미사일이 없으면 타겟 목록에서 제거
+        const targetsToRemove = [];
+        this.missileTargets.forEach(target => {
+            if (target.isDead || target.hp <= 0) {
+                targetsToRemove.push(target);
+            } else {
+                // 해당 타겟을 향한 활성 미사일이 있는지 확인
+                const hasMissile = this.activeMissiles.some(missile => 
+                    missile.targetMonster === target || missile.targetBoss === target
+                );
+                if (!hasMissile) {
+                    targetsToRemove.push(target);
+                }
+            }
+        });
+        
+        targetsToRemove.forEach(target => this.removeMissileTarget(target));
+    }
 }
 
 // ==================== 게임 인스턴스 및 루프 ====================
@@ -1507,84 +1779,96 @@ class GameUseCase {
 let game;
 let gameRunning = false;
 
-// 게임 루프
-function gameLoop() {
-    if (!gameRunning) return;
-    
-    // 몬스터 스폰 시스템 업데이트
-    game.updateMonsterSpawning();
-    
-    // 자동 보스 도전 체크
-    game.checkAutoChallengeBoss();
-    
-    // 플레이어 자동 이동 (근접 공격을 위해)
-    game.updatePlayerMovement();
-    
-    // 투사체 업데이트
-    game.updateProjectiles();
-    
-    // 자동 포션 사용 체크
-    game.checkAutoPotion();
-    
-    // MP 자동 회복
-    game.updateMpRecover();
-    
-    // 스킬 이펙트 업데이트
-    game.updateSkillEffects();
-    
-    // Miss 텍스트 업데이트
-    game.updateMissTexts();
-    
-    // 몸통박치기 애니메이션 업데이트
-    game.updateBodySlamAnimation();
-    
-    // 광선검 휘두르기 애니메이션 업데이트
-    game.updateSaberSwingAnimation();
-    
-    // 몬스터 효과 업데이트
-    if (game.currentMonster) {
-        game.currentMonster.updateEffects();
-    }
-    if (game.currentBoss) {
-        game.currentBoss.updateEffects();
-    }
-    
-    // 자동 전투 (0.3초마다 - 부드러운 전투)
-    if (Date.now() - game.lastAttackTime > 600) { // 300ms에서 600ms로 변경 (공격속도를 절반으로)
-        game.lastAttackTime = Date.now();
-        let combatResult = false;
-        if (game.currentBoss) {
-            combatResult = game.attackBoss();
-        } else {
-            combatResult = game.attackMonster();
-        }
-    }
-    
-    // 플레이 시간 증가 (60fps 기준으로 1초마다)
-    if (Date.now() - (game.lastTimeUpdate || 0) > 1000) {
-        game.player.playTime += 1;
-        game.lastTimeUpdate = Date.now();
-    }
-    
-    // UI 업데이트 (15fps로 제한하여 성능 최적화)
-    if (Date.now() - (game.lastUIUpdate || 0) > 67) {
-        updateUI();
-        game.lastUIUpdate = Date.now();
-    }
-    
-    // 배경 애니메이션
-    drawGame();
-}
-
 // 게임 루프 시작/정지 관리
 let gameLoopInterval = null;
+let gameLoopRequestId = null;
 
 function startGameLoop() {
     if (gameLoopInterval) {
         clearInterval(gameLoopInterval);
     }
-    // setInterval 사용으로 브라우저 포커스 아웃 상태에서도 게임 지속
-    gameLoopInterval = setInterval(gameLoop, 16); // 60fps (16ms마다 실행)
+    if (gameLoopRequestId) {
+        cancelAnimationFrame(gameLoopRequestId);
+    }
+    
+    // 이중 루프 시스템: setInterval로 게임 로직, requestAnimationFrame으로 렌더링
+    // setInterval로 게임 로직 실행 (브라우저 포커스 아웃 상태에서도 지속)
+    gameLoopInterval = setInterval(() => {
+        if (!gameRunning) return;
+        
+        // 몬스터 스폰 시스템 업데이트
+        game.updateMonsterSpawning();
+        
+        // 자동 보스 도전 체크
+        game.checkAutoChallengeBoss();
+        
+        // 플레이어 자동 이동 (근접 공격을 위해)
+        game.updatePlayerMovement();
+        
+        // 투사체 업데이트
+        game.updateProjectiles();
+        
+        // 자동 포션 사용 체크
+        game.checkAutoPotion();
+        
+        // MP 자동 회복
+        game.updateMpRecover();
+        
+        // 스킬 이펙트 업데이트
+        game.updateSkillEffects();
+        
+        // Miss 텍스트 업데이트
+        game.updateMissTexts();
+        
+        // 미사일 추적 시스템 업데이트
+        game.updateMissileTracking();
+        
+        // 몸통박치기 애니메이션 업데이트
+        game.updateBodySlamAnimation();
+        
+        // 광선검 휘두르기 애니메이션 업데이트
+        game.updateSaberSwingAnimation();
+        
+        // 몬스터 효과 업데이트
+        if (game.currentMonster) {
+            game.currentMonster.updateEffects();
+        }
+        if (game.currentBoss) {
+            game.currentBoss.updateEffects();
+        }
+        
+        // 자동 전투 (0.6초마다)
+        if (Date.now() - game.lastAttackTime > 600) {
+            game.lastAttackTime = Date.now();
+            let combatResult = false;
+            if (game.currentBoss) {
+                combatResult = game.attackBoss();
+            } else {
+                combatResult = game.attackMonster();
+            }
+        }
+        
+        // 플레이 시간 증가 (1초마다)
+        if (Date.now() - (game.lastTimeUpdate || 0) > 1000) {
+            game.player.playTime += 1;
+            game.lastTimeUpdate = Date.now();
+        }
+        
+        // UI 업데이트 (덜 자주 업데이트로 성능 최적화)
+        if (Date.now() - (game.lastUIUpdate || 0) > 100) {
+            updateUI();
+            game.lastUIUpdate = Date.now();
+        }
+    }, 16); // 60fps (16ms마다 실행)
+    
+    // requestAnimationFrame으로 렌더링 (부드러운 애니메이션)
+    function renderLoop() {
+        if (gameRunning) {
+            drawGame();
+            gameLoopRequestId = requestAnimationFrame(renderLoop);
+        }
+    }
+    renderLoop();
 }
 
 function stopGameLoop() {
@@ -1592,7 +1876,40 @@ function stopGameLoop() {
         clearInterval(gameLoopInterval);
         gameLoopInterval = null;
     }
+    if (gameLoopRequestId) {
+        cancelAnimationFrame(gameLoopRequestId);
+        gameLoopRequestId = null;
+    }
 }
+
+// 브라우저 Visibility API 처리 (포커스 아웃 시에도 게임 지속)
+document.addEventListener('visibilitychange', function() {
+    // 탭이 비활성화되어도 게임 로직은 계속 실행
+    // 단지 알림만 표시
+    if (document.hidden) {
+        console.log('Game continues running in background');
+    } else {
+        console.log('Game tab is active again');
+        // 탭이 다시 활성화되면 UI 즉시 업데이트
+        if (typeof updateUI === 'function') {
+            updateUI();
+        }
+    }
+});
+
+// 윈도우 포커스 이벤트 처리
+window.addEventListener('blur', function() {
+    // 윈도우가 포커스를 잃어도 게임 계속 진행
+    console.log('Window lost focus, but game continues');
+});
+
+window.addEventListener('focus', function() {
+    // 윈도우가 포커스를 다시 얻으면 UI 업데이트
+    console.log('Window regained focus');
+    if (typeof updateUI === 'function') {
+        updateUI();
+    }
+});
 
 // createStars 함수는 rendering.js로 이동
 
@@ -1605,6 +1922,13 @@ function drawProjectiles(ctx, canvas) {
     // 플레이어 투사체 그리기
     game.projectiles.forEach(projectile => {
         if (projectile.active) {
+            // 좌표 안전성 검사 - NaN이나 Infinity 체크
+            if (!isFinite(projectile.x) || !isFinite(projectile.y)) {
+                console.warn('Invalid projectile coordinates:', projectile);
+                projectile.active = false; // 비활성화하여 제거
+                return;
+            }
+            
             ctx.beginPath();
             
             if (projectile.type === 'laser') {
@@ -1709,22 +2033,34 @@ function drawProjectiles(ctx, canvas) {
     // 몬스터 투사체 그리기
     game.monsterProjectiles.forEach(projectile => {
         if (projectile.active) {
+            // 좌표 안전성 검사 - NaN이나 Infinity 체크
+            if (!isFinite(projectile.x) || !isFinite(projectile.y)) {
+                console.warn('Invalid monster projectile coordinates:', projectile);
+                projectile.active = false; // 비활성화하여 제거
+                return;
+            }
+            
             ctx.beginPath();
             
             if (projectile.type === 'fireball') {
                 // 파이어볼 투사체
                 ctx.arc(projectile.x, projectile.y, 4, 0, Math.PI * 2);
                 
-                // 그라데이션 효과
-                const gradient = ctx.createRadialGradient(
-                    projectile.x, projectile.y, 0,
-                    projectile.x, projectile.y, 4
-                );
-                gradient.addColorStop(0, '#ffff00');
-                gradient.addColorStop(0.5, '#ff6600');
-                gradient.addColorStop(1, '#ff0000');
-                
-                ctx.fillStyle = gradient;
+                // 그라데이션 효과 - 좌표 유효성 재검증
+                if (isFinite(projectile.x) && isFinite(projectile.y)) {
+                    const gradient = ctx.createRadialGradient(
+                        projectile.x, projectile.y, 0,
+                        projectile.x, projectile.y, 4
+                    );
+                    gradient.addColorStop(0, '#ffff00');
+                    gradient.addColorStop(0.5, '#ff6600');
+                    gradient.addColorStop(1, '#ff0000');
+                    
+                    ctx.fillStyle = gradient;
+                } else {
+                    // 폴백 색상
+                    ctx.fillStyle = '#ff6600';
+                }
                 ctx.fill();
                 
                 // 불꽃 꼬리 효과
@@ -1738,16 +2074,21 @@ function drawProjectiles(ctx, canvas) {
                 // 보스 에너지 투사체
                 ctx.arc(projectile.x, projectile.y, 6, 0, Math.PI * 2);
                 
-                // 보스 투사체 그라데이션 효과
-                const gradient = ctx.createRadialGradient(
-                    projectile.x, projectile.y, 0,
-                    projectile.x, projectile.y, 6
-                );
-                gradient.addColorStop(0, '#ffffff');
-                gradient.addColorStop(0.3, '#9b59b6');
-                gradient.addColorStop(1, '#2c3e50');
-                
-                ctx.fillStyle = gradient;
+                // 보스 투사체 그라데이션 효과 - 좌표 유효성 재검증
+                if (isFinite(projectile.x) && isFinite(projectile.y)) {
+                    const gradient = ctx.createRadialGradient(
+                        projectile.x, projectile.y, 0,
+                        projectile.x, projectile.y, 6
+                    );
+                    gradient.addColorStop(0, '#ffffff');
+                    gradient.addColorStop(0.3, '#9b59b6');
+                    gradient.addColorStop(1, '#2c3e50');
+                    
+                    ctx.fillStyle = gradient;
+                } else {
+                    // 폴백 색상
+                    ctx.fillStyle = '#9b59b6';
+                }
                 ctx.fill();
                 
                 // 에너지 오라 효과
@@ -2247,10 +2588,27 @@ window.initGame = function initGame() {
     // UI 업데이트
     updateUI();
     
-    // 자동 저장
+    // 자동 저장 (더 안정적인 자동 저장)
     setInterval(() => {
-        game.saveGame();
+        if (game && typeof game.saveGame === 'function') {
+            game.saveGame();
+        }
     }, 30000); // 30초마다 저장
+    
+    // 게임이 정상적으로 실행되고 있음을 알리는 로그
+    console.log('Game initialized and running - continues even when browser tab is inactive');
+    
+    // 브라우저가 비활성화되어도 게임 로직이 계속 실행되도록 보장
+    // 추가 보호 장치: 1분마다 게임 상태 확인
+    setInterval(() => {
+        if (gameRunning && game) {
+            // 게임이 실행 중이지만 루프가 멈춘 경우 재시작
+            if (!gameLoopInterval) {
+                console.log('Game loop was stopped, restarting...');
+                startGameLoop();
+            }
+        }
+    }, 60000); // 1분마다 확인
 }
 
 // 무기 선택 관련 함수들은 weapon.js에서 관리됩니다.

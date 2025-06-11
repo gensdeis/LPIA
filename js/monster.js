@@ -30,8 +30,8 @@ class Monster {
         // 애니메이션 및 이펙트
         this.hitEffect = false;
         this.hitEffectTimer = 0;
-        this.lastAttackTime = 0;
-        this.attackCooldown = 2500; // 2.5초마다 공격
+        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 2500); // 랜덤 시작 시간으로 분산
+        this.attackCooldown = 2500 + Math.floor(Math.random() * 1000); // 2.5~3.5초 사이 랜덤 쿨다운
         
         // 넉백 효과
         this.knockbackEffect = null;
@@ -168,6 +168,7 @@ class Boss extends Monster {
         
         this.positionX = 0.65;
         this.positionY = 0.5;
-        this.attackCooldown = 3000; // 3초마다 공격 (몬스터보다 느림)
+        this.attackCooldown = 3000 + Math.floor(Math.random() * 2000); // 3~5초 사이 랜덤 쿨다운
+        this.lastAttackTime = Date.now() - Math.floor(Math.random() * 3000); // 랜덤 시작 시간으로 분산
     }
 } 

@@ -150,6 +150,9 @@ function updateUI() {
     if (weaponSelector && weaponSelector.style.display !== 'none' && typeof updateWeaponSelectorUI === 'function') {
         updateWeaponSelectorUI();
     }
+    
+    // 토글 버튼 위치는 더 이상 여기서 업데이트하지 않음 (성능 및 중복 방지)
+    // 필요한 경우에만 명시적으로 호출: 페이지 로드, 리사이즈, 토글 시
 }
 
 // 퀘스트 UI 업데이트
@@ -393,6 +396,38 @@ function updateAutoPotionPriority() {
 // 인벤토리 패널 토글 기능
 let isInventoryCollapsed = false;
 
+// 토글 버튼 위치 동적 계산 함수
+function updateToggleButtonPosition() {
+    const inventoryPanel = document.getElementById('inventory');
+    const toggleButton = document.getElementById('inventoryToggle');
+    
+    if (!inventoryPanel || !toggleButton) return;
+    
+    // 패널이 접혀있으면 위치 계산하지 않음 (CSS로 고정 위치 사용)
+    if (isInventoryCollapsed) {
+        return;
+    }
+    
+    // 패널의 실제 위치와 크기 계산
+    const panelRect = inventoryPanel.getBoundingClientRect();
+    
+    // 토글 버튼을 패널의 바로 오른쪽에 정확히 위치
+    // getBoundingClientRect는 실제 렌더링된 크기를 반환하므로 가장 정확함
+    const toggleButtonLeft = panelRect.right;
+    
+    toggleButton.style.left = toggleButtonLeft + 'px';
+    
+    console.log('Panel position updated:', {
+        panelRect: panelRect,
+        panelLeft: panelRect.left,
+        panelRight: panelRect.right,
+        panelWidth: panelRect.width,
+        toggleLeft: toggleButtonLeft,
+        screenWidth: window.innerWidth,
+        collapsed: isInventoryCollapsed
+    });
+}
+
 function toggleInventoryPanel() {
     const inventoryPanel = document.getElementById('inventory');
     const toggleButton = document.getElementById('inventoryToggle');
@@ -410,12 +445,21 @@ function toggleInventoryPanel() {
         toggleButton.title = '장비 패널 열기 (Ctrl+I)';
         toggleButton.setAttribute('aria-label', '장비 패널 열기');
         
+        // 토글 버튼을 즉시 왼쪽 끝으로 이동 (CSS의 collapsed 클래스가 처리)
+        // left 값을 명시적으로 제거해서 CSS가 적용되도록 함
+        toggleButton.style.left = '';
+        
         // 접힘 상태 알림
         if (typeof showNotification === 'function') {
             showNotification('장비 패널이 최소화되었습니다', 'info');
         }
     } else {
-        // 패널 보이기
+        // 패널 보이기 전에 먼저 토글 버튼 위치를 계산해서 설정
+        // 이렇게 하면 애니메이션 중에 위치가 바뀌지 않음
+        setTimeout(() => {
+            updateToggleButtonPosition();
+        }, 50); // 패널이 펼쳐지기 시작할 때 즉시 계산
+        
         inventoryPanel.classList.remove('collapsed');
         toggleButton.classList.remove('collapsed');
         toggleArrow.classList.remove('collapsed');
@@ -471,5 +515,26 @@ function restoreInventoryState() {
 // 페이지 로드 완료 시 상태 복원
 document.addEventListener('DOMContentLoaded', function() {
     // 약간의 지연을 두고 상태 복원 (DOM이 완전히 준비된 후)
-    setTimeout(restoreInventoryState, 100);
+    setTimeout(() => {
+        restoreInventoryState();
+        // 토글 버튼 위치 초기 설정 (패널이 열려있을 때만)
+        if (!isInventoryCollapsed) {
+            updateToggleButtonPosition();
+        }
+    }, 100);
+});
+
+// 화면 크기 변경 시 토글 버튼 위치 업데이트
+window.addEventListener('resize', function() {
+    // 리사이즈 완료 후 위치 업데이트 (패널이 열려있을 때만)
+    if (!isInventoryCollapsed) {
+        setTimeout(updateToggleButtonPosition, 100);
+    }
+});
+
+// 게임 로드 완료 시에도 위치 업데이트
+window.addEventListener('load', function() {
+    if (!isInventoryCollapsed) {
+        setTimeout(updateToggleButtonPosition, 500);
+    }
 });
