@@ -113,15 +113,25 @@ function updateUI() {
     if (game.currentBoss) {
         if (currentMonster) currentMonster.textContent = game.currentBoss.name;
         if (monsterLevel) monsterLevel.textContent = game.currentBoss.level;
-        const bossHpPercent = (game.currentBoss.hp / game.currentBoss.maxHp) * 100;
-        if (bossHpBar) bossHpBar.style.width = bossHpPercent + '%';
-        if (bossHpText) bossHpText.textContent = `${Math.max(0, game.currentBoss.hp)}/${game.currentBoss.maxHp} (${bossHpPercent.toFixed(0)}%)`;
+        
+        // 안전한 HP 계산 (NaN 방지)
+        const bossHp = Math.max(0, game.currentBoss.hp || 0);
+        const bossMaxHp = Math.max(1, game.currentBoss.maxHp || 1); // 0으로 나누기 방지
+        const bossHpPercent = (bossHp / bossMaxHp) * 100;
+        
+        if (bossHpBar) bossHpBar.style.width = Math.max(0, bossHpPercent) + '%';
+        if (bossHpText) bossHpText.textContent = `${bossHp}/${bossMaxHp} (${Math.max(0, bossHpPercent).toFixed(0)}%)`;
     } else if (game.currentMonster) {
         if (currentMonster) currentMonster.textContent = game.currentMonster.name;
         if (monsterLevel) monsterLevel.textContent = game.currentMonster.level;
-        const monsterHpPercent = (game.currentMonster.hp / game.currentMonster.maxHp) * 100;
-        if (bossHpBar) bossHpBar.style.width = monsterHpPercent + '%';
-        if (bossHpText) bossHpText.textContent = `${Math.max(0, game.currentMonster.hp)}/${game.currentMonster.maxHp} (${monsterHpPercent.toFixed(0)}%)`;
+        
+        // 안전한 HP 계산 (NaN 방지)
+        const monsterHp = Math.max(0, game.currentMonster.hp || 0);
+        const monsterMaxHp = Math.max(1, game.currentMonster.maxHp || 1); // 0으로 나누기 방지
+        const monsterHpPercent = (monsterHp / monsterMaxHp) * 100;
+        
+        if (bossHpBar) bossHpBar.style.width = Math.max(0, monsterHpPercent) + '%';
+        if (bossHpText) bossHpText.textContent = `${monsterHp}/${monsterMaxHp} (${Math.max(0, monsterHpPercent).toFixed(0)}%)`;
     }
     
     // 장비 슬롯 업데이트

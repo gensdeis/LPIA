@@ -160,7 +160,11 @@ class GameUseCase {
         // 최대 5마리까지만 스폰
         if (this.monsters.length >= 5) return;
         
-        const monsterLevel = Math.max(1, this.stage - Math.floor(Math.random() * 3));
+        // 개선된 몬스터 레벨 계산 (스테이지 + 플레이어 레벨 고려)
+        const baseLevel = Math.floor(this.stage * 0.8 + this.player.level * 0.5); // 스테이지 80% + 플레이어 레벨 50%
+        const levelVariance = Math.floor(Math.random() * 4) - 1; // -1 ~ +2 변동
+        const monsterLevel = Math.max(1, baseLevel + levelVariance);
+        
         const monsterName = this.monsterNames[Math.floor(Math.random() * this.monsterNames.length)];
         const newMonster = new Monster(monsterName, monsterLevel, this.stage);
         
@@ -220,7 +224,12 @@ class GameUseCase {
 
     spawnBoss() {
         const bossName = `${this.planetNames[Math.floor(this.stage / 100) % this.planetNames.length]} 보스`;
-        this.currentBoss = new Boss(bossName, this.stage, this.stage);
+        
+        // 개선된 보스 레벨 계산 (스테이지 + 플레이어 레벨 고려)
+        const bossBaseLevel = Math.floor(this.stage * 0.9 + this.player.level * 0.6); // 스테이지 90% + 플레이어 레벨 60%
+        const bossLevel = Math.max(1, bossBaseLevel + Math.floor(Math.random() * 3)); // 0~2 추가 레벨
+        
+        this.currentBoss = new Boss(bossName, bossLevel, this.stage);
         
         // 보스도 몬스터와 같은 새로운 속성들 추가
         this.currentBoss.attackType = Math.random() < 0.3 ? 'melee' : 'ranged'; // 보스는 원거리가 더 많음
@@ -244,8 +253,12 @@ class GameUseCase {
         // 기존 takeDamage 메서드 확장
         const originalTakeDamage = this.currentBoss.takeDamage.bind(this.currentBoss);
         this.currentBoss.takeDamage = function(damage) {
-            const actualDamage = Math.max(1, damage - this.defense);
-            this.hp -= actualDamage;
+            if (this.isDead) return false;
+            
+            // 방어력 적용 (안전한 계산)
+            const defense = this.defense || 0; // defense가 undefined인 경우 0으로 처리
+            const actualDamage = Math.max(1, damage - defense);
+            this.hp = Math.max(0, this.hp - actualDamage); // hp가 음수가 되지 않도록
             
             // 피격 효과
             this.hitEffect = true;
@@ -301,6 +314,14 @@ class GameUseCase {
     performRangedAttack(target) {
         const weapon = this.player.equipment.laser;
         if (!weapon) return;
+        
+        // 사정거리 체크
+        const distance = this.getDistanceToTarget(target);
+        const maxRange = 0.4; // 원거리 무기 최대 사정거리
+        if (distance > maxRange) {
+            // 사정거리 밖이면 공격하지 않음
+            return;
+        }
         
         // 명중률 체크
         const hitChance = Math.random() * 100;
@@ -371,6 +392,8 @@ class GameUseCase {
 
         // 광선검은 훨씬 빠른 속도 (근접 공격이므로)
         const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'lightsaber', 25);
+        projectile.targetMonster = this.currentMonster; // 타깃 몬스터 정보 추가
+        projectile.targetBoss = this.currentBoss; // 타깃 보스 정보 추가
         this.projectiles.push(projectile);
     }
 
@@ -394,6 +417,8 @@ class GameUseCase {
 
         const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'laser', 20);
         projectile.isCritical = isCritical; // 치명타 정보 추가
+        projectile.targetMonster = this.currentMonster; // 타깃 몬스터 정보 추가
+        projectile.targetBoss = this.currentBoss; // 타깃 보스 정보 추가
         this.projectiles.push(projectile);
         
         // 치명타 시 특별한 알림
@@ -455,14 +480,14 @@ class GameUseCase {
         this.monsterProjectiles.push(projectile);
     }
 
-    dealDamageToMonster(damage) {
-        if (!this.currentMonster) return;
+    dealDamageToSpecificMonster(monster, damage) {
+        if (!monster || monster.isDead) return false;
 
-        const isDead = this.currentMonster.takeDamage(damage);
+        const isDead = monster.takeDamage(damage);
 
         if (isDead) {
             // 죽은 몬스터 정보를 로컬 변수에 저장 (레이스 컨디션 방지)
-            const deadMonster = this.currentMonster;
+            const deadMonster = monster;
             
             // 사망 애니메이션이 끝난 후 몬스터 처리
             setTimeout(() => {
@@ -485,13 +510,23 @@ class GameUseCase {
                     this.dropHealthPotion(false);
                 }
 
-                // 현재 몬스터 제거
-                this.currentMonster = null;
+                // 현재 몬스터가 죽은 몬스터와 같다면 초기화
+                if (this.currentMonster === deadMonster) {
+                    this.currentMonster = null;
+                }
                 
                 // 새 몬스터 스폰
                 this.spawnMonster();
             }, 500); // 사망 애니메이션 시간과 동일
         }
+        
+        return isDead;
+    }
+
+    // 기존 dealDamageToMonster 함수는 호환성을 위해 유지
+    dealDamageToMonster(damage) {
+        if (!this.currentMonster) return;
+        return this.dealDamageToSpecificMonster(this.currentMonster, damage);
     }
 
     dealDamageToPlayer(damage) {
@@ -533,17 +568,30 @@ class GameUseCase {
             const hit = projectile.update();
             if (hit) {
                 let target = null;
-                if (this.currentBoss) {
+                let canDealDamage = false;
+                
+                // 투사체의 타깃이 여전히 유효한지 확인
+                if (projectile.targetBoss && projectile.targetBoss === this.currentBoss && !this.currentBoss.isDead) {
                     target = this.currentBoss;
-                    this.dealDamageToBoss(projectile.damage);
-                } else if (this.currentMonster) {
-                    target = this.currentMonster;
-                    this.dealDamageToMonster(projectile.damage);
+                    canDealDamage = true;
+                } else if (projectile.targetMonster && !projectile.targetMonster.isDead && 
+                          this.monsters.includes(projectile.targetMonster)) {
+                    target = projectile.targetMonster;
+                    canDealDamage = true;
                 }
                 
-                // 미사일 스킬 피격 시 특별한 폭발 이펙트
-                if (projectile.type === 'missile' && target) {
-                    this.createMissileExplosionEffect(target);
+                // 타깃이 유효할 때만 데미지 적용
+                if (canDealDamage && target) {
+                    if (target === this.currentBoss) {
+                        this.dealDamageToBoss(projectile.damage);
+                    } else {
+                        this.dealDamageToSpecificMonster(target, projectile.damage);
+                    }
+                    
+                    // 미사일 스킬 피격 시 특별한 폭발 이펙트
+                    if (projectile.type === 'missile' && target) {
+                        this.createMissileExplosionEffect(target);
+                    }
                 }
                 
                 return false; // 투사체 제거
@@ -600,11 +648,19 @@ class GameUseCase {
         const weapon = this.player.equipment.laser;
         if (!weapon) return;
         
+        // 사정거리 체크
+        const distance = this.getDistanceToTarget(target);
+        const maxRange = 0.4; // 원거리 무기 최대 사정거리
+        if (distance > maxRange) {
+            // 사정거리 밖이면 공격하지 않음
+            return;
+        }
+        
         // 명중률 체크
         const hitChance = Math.random() * 100;
         if (hitChance > weapon.accuracy) {
             // 명중 실패
-            showNotification('Miss!', 'info');
+            this.showMissText(target);
             return;
         }
         
@@ -632,6 +688,7 @@ class GameUseCase {
 
         // 광선검은 훨씬 빠른 속도 (근접 공격이므로)
         const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'lightsaber', 25);
+        projectile.targetBoss = this.currentBoss; // 타깃 보스 정보 추가
         this.projectiles.push(projectile);
         
         // 치명타 시 특별한 알림
@@ -649,6 +706,7 @@ class GameUseCase {
 
         const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'laser', 20);
         projectile.isCritical = isCritical; // 치명타 정보 추가
+        projectile.targetBoss = this.currentBoss; // 타깃 보스 정보 추가
         this.projectiles.push(projectile);
         
         // 치명타 시 특별한 알림
@@ -735,27 +793,30 @@ class GameUseCase {
     
     // 플레이어와 타겟 간의 거리 계산
     getDistanceToTarget(target) {
-        const canvas = document.getElementById('gameCanvas');
-        const playerX = canvas.width * this.playerPosition.x;
-        const playerY = canvas.height * this.playerPosition.y;
+        if (!target) return Infinity;
+        
+        // 플레이어와 타겟의 위치를 비율로 계산
+        const playerX = this.playerPosition.x;
+        const playerY = this.playerPosition.y;
         
         let targetX, targetY;
         if (target === this.currentBoss) {
-            targetX = canvas.width * 0.7;
-            targetY = canvas.height * 0.6;
-        } else if (target === this.currentMonster) {
-            targetX = canvas.width * this.currentMonster.positionX;
-            targetY = canvas.height * this.currentMonster.positionY;
+            targetX = 0.65;
+            targetY = 0.5;
         } else {
-            return Infinity;
+            targetX = target.positionX;
+            targetY = target.positionY;
         }
         
-        return Math.sqrt(Math.pow(targetX - playerX, 2) + Math.pow(targetY - playerY, 2));
+        const dx = targetX - playerX;
+        const dy = targetY - playerY;
+        return Math.sqrt(dx * dx + dy * dy);
     }
     
-    // 근접 공격 가능 여부 확인
+    // 근접 공격 가능 여부 확인 (비율 기준)
     canUseMeleeAttack(target) {
-        return this.getDistanceToTarget(target) <= this.meleeRange;
+        const distance = this.getDistanceToTarget(target);
+        return distance <= 0.1; // 화면 비율 기준 10% 거리 내에서 근접 공격 가능 (0.2에서 0.1로 변경)
     }
     
     // 실제 근접 공격 수행 (즉시 데미지 + 이펙트)
@@ -770,7 +831,7 @@ class GameUseCase {
         if (target === this.currentBoss) {
             isDead = this.dealDamageToBoss(damage);
         } else {
-            isDead = this.dealDamageToMonster(damage);
+            isDead = this.dealDamageToSpecificMonster(target, damage);
         }
         
         // 근접 공격 이펙트
@@ -834,17 +895,34 @@ class GameUseCase {
                 const dy = targetY - this.playerPosition.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance > 0.15) { // 근접 공격 범위 밖이면 접근
-                    // 타겟 방향으로 접근 (적당한 거리 유지)
-                    this.playerPosition.targetX = targetX - (dx / distance) * 0.12;
-                    this.playerPosition.targetY = targetY - (dy / distance) * 0.12;
+                if (distance > 0.08) { // 근접 공격 범위를 더 짧게 (0.15에서 0.08로 변경)
+                    // 타겟 방향으로 접근 (매우 가까운 거리 유지)
+                    this.playerPosition.targetX = targetX - (dx / distance) * 0.06; // 더 가까이 접근 (0.12에서 0.06으로 변경)
+                    this.playerPosition.targetY = targetY - (dy / distance) * 0.06;
                 } else {
                     // 근접 범위 내에 있으면 현재 위치 유지
                     this.playerPosition.targetX = this.playerPosition.x;
                     this.playerPosition.targetY = this.playerPosition.y;
                 }
+            } else if (this.player.selectedWeaponType === 'ranged' && this.player.equipment.laser) {
+                // 원거리 무기도 사정거리 제한 적용
+                const dx = targetX - this.playerPosition.x;
+                const dy = targetY - this.playerPosition.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxRange = 0.4; // 원거리 무기 최대 사정거리
+                const optimalRange = 0.3; // 최적 사정거리
+                
+                if (distance > maxRange) {
+                    // 사정거리 밖이면 접근
+                    this.playerPosition.targetX = targetX - (dx / distance) * optimalRange;
+                    this.playerPosition.targetY = targetY - (dy / distance) * optimalRange;
+                } else {
+                    // 사정거리 내에 있으면 중앙에서 약간 이동하여 위치 조정
+                    this.playerPosition.targetX = 0.5 + (dx / distance) * 0.1;
+                    this.playerPosition.targetY = 0.5 + (dy / distance) * 0.1;
+                }
             } else {
-                // 원거리 무기이거나 근접 무기가 없으면 중앙 위치 유지
+                // 무기가 없으면 중앙 위치 유지
                 this.playerPosition.targetX = 0.5;
                 this.playerPosition.targetY = 0.5;
             }
@@ -1035,6 +1113,9 @@ class GameUseCase {
             const offlineTime = Date.now() - gameData.timestamp;
             this.processOfflineProgress(offlineTime);
             
+            // 게임 로드 후 퀘스트 상태 체크 (레벨, 골드 등 현재 상태와 동기화)
+            this.checkQuestStatus();
+            
             // 무기 선택 상태 확인 (로드 후)
             setTimeout(() => {
                 checkWeaponSelectionState();
@@ -1081,6 +1162,7 @@ class GameUseCase {
         
         // 게임 일시 정지
         gameRunning = false;
+        stopGameLoop();
         
         // 사망 알림
         showNotification(`💀 You died! Returning to stage ${this.stageStartState.stage} start state...`, 'info');
@@ -1105,7 +1187,7 @@ class GameUseCase {
             
             // 게임 재개
             gameRunning = true;
-            gameLoop();
+            startGameLoop();
             
             // 재시작 알림
             showNotification('🔄 Stage restarted! Keep fighting!', 'success');
@@ -1172,10 +1254,25 @@ class GameUseCase {
             projectile.originalTargetX = targetX;
             projectile.originalTargetY = targetY;
             
+            // 타깃 정보 추가
+            if (target === this.currentBoss) {
+                projectile.targetBoss = this.currentBoss;
+            } else {
+                projectile.targetMonster = target;
+            }
+            
             this.projectiles.push(projectile);
         } else {
             const projectile = new Projectile(startX, startY, targetX, targetY, damage, type, 15);
             projectile.isSkill = true;
+            
+            // 타깃 정보 추가
+            if (target === this.currentBoss) {
+                projectile.targetBoss = this.currentBoss;
+            } else {
+                projectile.targetMonster = target;
+            }
+            
             this.projectiles.push(projectile);
         }
     }
@@ -1321,7 +1418,7 @@ class GameUseCase {
             if (target === this.currentBoss) {
                 this.dealDamageToBoss(5);
             } else if (target === this.currentMonster) {
-                this.dealDamageToMonster(5);
+                this.dealDamageToSpecificMonster(target, 5);
             }
             
             // 넉백 효과 시작
@@ -1410,8 +1507,6 @@ class GameUseCase {
 let game;
 let gameRunning = false;
 
-// 기존 initGame 함수는 아래 새로운 버전으로 대체됨
-
 // 게임 루프
 function gameLoop() {
     if (!gameRunning) return;
@@ -1479,10 +1574,23 @@ function gameLoop() {
     
     // 배경 애니메이션
     drawGame();
-    
-    // 다음 프레임 (60fps) - 백그라운드에서도 동작하도록 setInterval 사용
-    if (gameRunning) {
-        setTimeout(gameLoop, 16); // 60fps (16ms마다 실행)
+}
+
+// 게임 루프 시작/정지 관리
+let gameLoopInterval = null;
+
+function startGameLoop() {
+    if (gameLoopInterval) {
+        clearInterval(gameLoopInterval);
+    }
+    // setInterval 사용으로 브라우저 포커스 아웃 상태에서도 게임 지속
+    gameLoopInterval = setInterval(gameLoop, 16); // 60fps (16ms마다 실행)
+}
+
+function stopGameLoop() {
+    if (gameLoopInterval) {
+        clearInterval(gameLoopInterval);
+        gameLoopInterval = null;
     }
 }
 
@@ -2132,9 +2240,9 @@ window.initGame = function initGame() {
     // 배경 별 생성
     createStars();
     
-    // 게임 루프 시작
+    // 게임 루프 시작 (브라우저 포커스 아웃 상태에서도 지속)
     gameRunning = true;
-    gameLoop();
+    startGameLoop();
     
     // UI 업데이트
     updateUI();

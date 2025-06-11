@@ -94,13 +94,29 @@ class Player {
     levelUp() {
         this.experience -= this.experienceToNext;
         this.level++;
-        this.experienceToNext = Math.floor(this.experienceToNext * 1.2);
-        this.maxHp += 20;
+        
+        // 개선된 경험치 요구량 계산 (기하급수적 증가를 완화)
+        const baseExp = 100;
+        const levelMultiplier = 1.15; // 1.2에서 1.15로 감소 (더 완만한 증가)
+        this.experienceToNext = Math.floor(baseExp * Math.pow(levelMultiplier, this.level - 1));
+        
+        // 레벨업 시 스탯 증가량 개선
+        const hpIncrease = 20 + Math.floor(this.level * 0.5); // 레벨이 높을수록 조금 더 증가
+        const mpIncrease = 10 + Math.floor(this.level * 0.3);
+        const attackIncrease = 2 + Math.floor(this.level * 0.1);
+        const defenseIncrease = 1 + Math.floor(this.level * 0.05);
+        
+        this.maxHp += hpIncrease;
         this.hp = this.maxHp; // HP를 최대로 회복
-        this.maxMp += 10; // MP 최대치 증가
+        this.maxMp += mpIncrease;
         this.mp = this.maxMp; // MP도 최대로 회복
-        this.baseAttack += 2;
-        this.baseDefense += 1;
+        this.baseAttack += attackIncrease;
+        this.baseDefense += defenseIncrease;
+        
+        // 레벨업 시 게임 시스템에 알림 (퀘스트 업데이트를 위해)
+        if (typeof game !== 'undefined' && game.updateQuest) {
+            game.updateQuest('level', this.level);
+        }
         
         // 레벨업 알림 표시 (showNotification은 ui.js에서 정의)
         if (typeof showNotification === 'function') {

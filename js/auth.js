@@ -143,6 +143,11 @@ function loadUserGameData(userId) {
         // 새 몬스터 스폰
         game.spawnMonster();
         
+        // 퀘스트 상태 체크 (레벨, 골드 등 현재 상태와 동기화)
+        if (typeof game.checkQuestStatus === 'function') {
+            game.checkQuestStatus();
+        }
+        
         // UI 업데이트
         if (typeof updateUI === 'function') {
             updateUI();

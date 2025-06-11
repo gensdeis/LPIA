@@ -328,7 +328,12 @@ function drawMonsterFromArray(ctx, canvas, monster) {
     
     const baseY = canvas.height * monster.positionY + Math.sin(Date.now() * 0.004) * 8;
     y = baseY;
-    let size = (35 + monster.level * 3) * monster.scale; // 크기를 더 크게 조정
+    
+    // 개선된 몬스터 크기 계산 (너무 커지지 않도록 제한)
+    const baseSize = 30;
+    const levelSizeBonus = Math.min(monster.level * 2, 50); // 최대 50 추가 크기
+    const stageSizeBonus = Math.min(monster.stage * 0.5, 20); // 최대 20 추가 크기
+    let size = (baseSize + levelSizeBonus + stageSizeBonus) * monster.scale;
     
     // 피격 효과 - 몬스터 흔들림
     if (monster.hitEffect) {
@@ -445,7 +450,12 @@ function drawBoss(ctx, canvas) {
     
     const baseY = canvas.height * 0.5 + Math.sin(Date.now() * 0.002) * 15;
     y = baseY;
-    let size = (40 + boss.level * 3) * boss.scale;
+    
+    // 개선된 보스 크기 계산 (적절한 크기 유지)
+    const baseBossSize = 50;
+    const levelSizeBonus = Math.min(boss.level * 1.5, 60); // 최대 60 추가 크기
+    const stageSizeBonus = Math.min(boss.stage * 0.3, 30); // 최대 30 추가 크기
+    let size = (baseBossSize + levelSizeBonus + stageSizeBonus) * boss.scale;
     
     // 피격 효과 - 보스 흔들림
     if (boss.hitEffect) {
@@ -539,9 +549,11 @@ function drawBoss(ctx, canvas) {
     
     // 보스 정보 표시 (살아있을 때만)
     if (boss.alpha > 0.5) {
-        // HP 바
+        // HP 바 (안전한 계산으로 NaN 방지)
         const hpBarWidth = 120;
-        const hpPercent = boss.hp / boss.maxHp;
+        const bossHp = Math.max(0, boss.hp || 0);
+        const bossMaxHp = Math.max(1, boss.maxHp || 1); // 0으로 나누기 방지
+        const hpPercent = Math.max(0, Math.min(1, bossHp / bossMaxHp)); // 0~1 범위로 제한
         
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(x - hpBarWidth/2, y - size - 35, hpBarWidth, 15);

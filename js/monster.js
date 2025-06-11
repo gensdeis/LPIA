@@ -4,11 +4,16 @@ class Monster {
         this.name = name;
         this.level = level;
         this.stage = stage;
-        this.maxHp = level * 80 + 100;
+        
+        // 개선된 스탯 계산 (레벨과 스테이지 고려)
+        const stageBonus = Math.floor(stage * 0.3); // 스테이지 보너스
+        this.maxHp = Math.floor(level * 75 + stageBonus * 25 + 120); // 기본 120 + 레벨당 75 + 스테이지당 7.5
         this.hp = this.maxHp;
-        this.attack = level * 8 + 15;
-        this.gold = level * 5 + Math.floor(Math.random() * 10);
-        this.experience = level * 3 + 5;
+        this.attack = Math.floor(level * 7 + stageBonus * 3 + 18); // 기본 18 + 레벨당 7 + 스테이지당 0.9
+        this.defense = Math.floor(level * 2 + stageBonus * 1 + 8); // 기본 8 + 레벨당 2 + 스테이지당 0.3
+        this.gold = Math.floor(level * 4 + stageBonus * 2 + Math.floor(Math.random() * 12) + 8); // 향상된 골드 보상
+        this.experience = Math.floor(level * 3 + stageBonus * 1 + 8); // 향상된 경험치
+        
         this.positionX = 0.8;
         this.positionY = 0.5;
         this.isDead = false;
@@ -144,11 +149,23 @@ class Monster {
 class Boss extends Monster {
     constructor(name, level, stage) {
         super(name, level, stage);
-        this.maxHp = level * 500 + 1000; // 보스는 훨씬 강함
+        
+        // 보스는 훨씬 강력한 스탯 (Monster 클래스 기본 스탯에 추가 보너스)
+        const stageBonusMultiplier = 1 + Math.floor(stage / 50) * 0.2; // 50스테이지마다 20% 증가
+        
+        this.maxHp = Math.floor(this.maxHp * 6 + level * 400 + stage * 20); // 기본 몬스터의 6배 + 추가 보너스
         this.hp = this.maxHp;
-        this.attack = level * 25 + 50;
-        this.gold = level * 50 + 100;
-        this.experience = level * 30 + 100;
+        this.attack = Math.floor(this.attack * 3 + level * 20 + stage * 5); // 기본 몬스터의 3배 + 추가 보너스
+        this.defense = Math.floor(this.defense * 4 + level * 8 + stage * 2); // 기본 몬스터의 4배 + 추가 보너스
+        this.gold = Math.floor(level * 40 + stage * 15 + 150); // 훨씬 많은 골드 보상
+        this.experience = Math.floor(level * 25 + stage * 8 + 120); // 훨씬 많은 경험치
+        
+        // 스테이지 보너스 적용
+        this.maxHp = Math.floor(this.maxHp * stageBonusMultiplier);
+        this.attack = Math.floor(this.attack * stageBonusMultiplier);
+        this.defense = Math.floor(this.defense * stageBonusMultiplier);
+        this.hp = this.maxHp; // HP 재설정
+        
         this.positionX = 0.65;
         this.positionY = 0.5;
         this.attackCooldown = 3000; // 3초마다 공격 (몬스터보다 느림)
