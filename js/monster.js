@@ -15,6 +15,13 @@ class Monster {
         this.deathTimer = 0;
         this.deathAnimationDuration = 1000; // 1초
         
+        // 이동 관련 속성 추가
+        this.originalPositionX = this.positionX;
+        this.originalPositionY = this.positionY;
+        this.moveSpeed = 0.0003; // 매우 천천히 이동
+        this.targetPlayerX = 0.5; // 플레이어 새로운 중앙 위치
+        this.targetPlayerY = 0.5;
+        
         // 애니메이션 및 이펙트
         this.hitEffect = false;
         this.hitEffectTimer = 0;
@@ -48,6 +55,9 @@ class Monster {
     }
     
     updateEffects() {
+        // 플레이어쪽으로 천천히 이동
+        this.moveTowardsPlayer();
+        
         // 피격 효과 업데이트
         if (this.hitEffect && Date.now() - this.hitEffectTimer > 200) {
             this.hitEffect = false;
@@ -74,6 +84,43 @@ class Monster {
                 this.positionX = this.knockbackEffect.originalX;
                 this.knockbackEffect = null;
             }
+        }
+    }
+    
+    moveTowardsPlayer() {
+        if (this.isDead || this.knockbackEffect) return;
+        
+        // 공격 타입에 따른 다른 행동 패턴
+        if (this.attackType === 'melee') {
+            // 근접 몬스터: 플레이어에게 매우 가까이 접근 (공격을 위해)
+            const minDistance = 0.18; // 근접 공격을 위해 더 가까이
+            const dx = this.targetPlayerX - this.positionX;
+            const dy = this.targetPlayerY - this.positionY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > minDistance) {
+                // 더 빠르게 접근
+                this.positionX += dx * this.moveSpeed * 1.5;
+                this.positionY += dy * this.moveSpeed * 1.5;
+            }
+        } else {
+            // 원거리 몬스터: 플레이어에게 접근하되 적당한 거리 유지 (원거리 공격을 위해)
+            const optimalDistance = 0.3; // 원거리 공격에 적합한 거리
+            const maxDistance = 0.4; // 너무 멀면 접근
+            const dx = this.targetPlayerX - this.positionX;
+            const dy = this.targetPlayerY - this.positionY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > maxDistance) {
+                // 너무 멀면 접근
+                this.positionX += dx * this.moveSpeed;
+                this.positionY += dy * this.moveSpeed;
+            } else if (distance < optimalDistance) {
+                // 너무 가까우면 살짝 뒤로
+                this.positionX -= dx * this.moveSpeed * 0.5;
+                this.positionY -= dy * this.moveSpeed * 0.5;
+            }
+            // 적당한 거리면 이동하지 않음
         }
     }
 
