@@ -50,6 +50,9 @@ function drawGame() {
     
     // 몸통박치기 이펙트 그리기
     drawBodySlamEffect(ctx, canvas);
+    
+    // Miss 텍스트 그리기
+    drawMissTexts(ctx, canvas);
 }
 
 // 행성 그리기
@@ -154,9 +157,31 @@ function drawPlayer(ctx, canvas) {
     // 광선검 (왼손)
     if (player.equipment.lightsaber) {
         const saber = player.equipment.lightsaber;
+        
+        // 광선검 휘두르기 애니메이션 계산
+        let swingAngle = 0;
+        if (game.saberSwingAnimation && game.saberSwingAnimation.active) {
+            const elapsed = Date.now() - game.saberSwingAnimation.startTime;
+            const progress = elapsed / game.saberSwingAnimation.duration;
+            
+            if (progress <= 1) {
+                // 반시계 방향으로 휘두르기 (0도에서 -90도까지)
+                swingAngle = -Math.PI / 2 * Math.sin(progress * Math.PI); // 사인 곡선으로 부드럽게
+            }
+        }
+        
+        // 기본 각도 + 휘두르기 각도
+        const baseAngle = -Math.PI * 0.4; // 기본 각도 (대각선 위)
+        const totalAngle = baseAngle + swingAngle;
+        
+        // 광선검 끝점 계산
+        const saberLength = 30;
+        const saberEndX = x - 20 + Math.cos(totalAngle) * saberLength;
+        const saberEndY = y + Math.sin(totalAngle) * saberLength;
+        
         ctx.beginPath();
         ctx.moveTo(x - 20, y);
-        ctx.lineTo(x - 35, y - 30);
+        ctx.lineTo(saberEndX, saberEndY);
         ctx.strokeStyle = saber.visual.color;
         ctx.lineWidth = 4;
         ctx.stroke();
@@ -166,7 +191,7 @@ function drawPlayer(ctx, canvas) {
         ctx.shadowColor = saber.visual.color;
         ctx.beginPath();
         ctx.moveTo(x - 20, y);
-        ctx.lineTo(x - 35, y - 30);
+        ctx.lineTo(saberEndX, saberEndY);
         ctx.strokeStyle = saber.visual.color;
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -534,4 +559,36 @@ function drawBoss(ctx, canvas) {
     
     // 투명도 복원
     ctx.globalAlpha = 1;
+}
+
+// Miss 텍스트 그리기
+function drawMissTexts(ctx, canvas) {
+    if (!game.missTexts) return;
+    
+    game.missTexts.forEach(missText => {
+        const elapsed = Date.now() - missText.startTime;
+        const progress = elapsed / missText.duration;
+        
+        // 페이드 아웃 효과
+        const alpha = Math.max(0, 1 - progress);
+        
+        // 위로 떠오르는 효과
+        const offsetY = progress * -30;
+        
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `${missText.fontSize}px Arial`;
+        ctx.fillStyle = missText.color;
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        
+        // 텍스트 외곽선
+        ctx.strokeText(missText.text, missText.x, missText.y + offsetY);
+        
+        // 텍스트 내부
+        ctx.fillText(missText.text, missText.x, missText.y + offsetY);
+        
+        ctx.restore();
+    });
 } 

@@ -41,11 +41,11 @@ class GameUseCase {
         // 근접 공격 이펙트
         this.meleeEffects = [];
         
-        // 플레이어 위치 (기본 위치 - 중앙 좌측)
+        // 플레이어 위치 (기본 위치 - 브라우저 정가운데)
         this.playerPosition = {
-            x: 0.35,
+            x: 0.5, // 0.35에서 0.5로 변경 (브라우저 정가운데)
             y: 0.5,
-            targetX: 0.35,
+            targetX: 0.5, // 0.35에서 0.5로 변경
             targetY: 0.5,
             moveSpeed: 0.002 // 화면 비율 기준 이동 속도
         };
@@ -167,9 +167,25 @@ class GameUseCase {
         // 공격 타입 랜덤 선택 (근접/원거리)
         newMonster.attackType = Math.random() < 0.5 ? 'melee' : 'ranged';
         
-        // 위치 분산
-        newMonster.positionX = 0.6 + Math.random() * 0.3; // 0.6 ~ 0.9
-        newMonster.positionY = 0.3 + Math.random() * 0.4; // 0.3 ~ 0.7
+        // 다양한 위치에서 스폰 (캔버스 전체 영역 활용)
+        const spawnArea = Math.random();
+        if (spawnArea < 0.25) {
+            // 상단 스폰
+            newMonster.positionX = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
+            newMonster.positionY = 0.1 + Math.random() * 0.2; // 0.1 ~ 0.3
+        } else if (spawnArea < 0.5) {
+            // 하단 스폰
+            newMonster.positionX = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
+            newMonster.positionY = 0.7 + Math.random() * 0.2; // 0.7 ~ 0.9
+        } else if (spawnArea < 0.75) {
+            // 좌측 스폰
+            newMonster.positionX = 0.1 + Math.random() * 0.2; // 0.1 ~ 0.3
+            newMonster.positionY = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
+        } else {
+            // 우측 스폰
+            newMonster.positionX = 0.7 + Math.random() * 0.2; // 0.7 ~ 0.9
+            newMonster.positionY = 0.2 + Math.random() * 0.6; // 0.2 ~ 0.8
+        }
         newMonster.scale = 1;
         newMonster.alpha = 1;
         
@@ -289,8 +305,8 @@ class GameUseCase {
         // 명중률 체크
         const hitChance = Math.random() * 100;
         if (hitChance > weapon.accuracy) {
-            // 명중 실패
-            showNotification('Miss!', 'info');
+            // 명중 실패 - 몬스터 위에 Miss 텍스트 표시
+            this.showMissText(target);
             return;
         }
         
@@ -308,11 +324,37 @@ class GameUseCase {
         // 투사체 생성
         this.createPlayerProjectile(damage, isCritical);
     }
+    
+    showMissText(target) {
+        if (!target) return;
+        
+        const canvas = document.getElementById('gameCanvas');
+        const x = canvas.width * target.positionX;
+        const y = canvas.height * target.positionY - 30; // 몬스터 위쪽
+        
+        // Miss 텍스트 객체 생성
+        const missText = {
+            x: x,
+            y: y,
+            text: 'Miss',
+            startTime: Date.now(),
+            duration: 1000, // 1초간 표시
+            color: '#888888',
+            fontSize: 16
+        };
+        
+        // 기존 missTexts 배열이 없으면 생성
+        if (!this.missTexts) {
+            this.missTexts = [];
+        }
+        
+        this.missTexts.push(missText);
+    }
 
     createMeleeAttack(damage) {
         const canvas = document.getElementById('gameCanvas');
-        const startX = canvas.width * 0.2 + 20;
-        const startY = canvas.height * 0.7;
+        const startX = canvas.width * this.playerPosition.x + 20; // 동적 플레이어 위치 사용
+        const startY = canvas.height * this.playerPosition.y; // 동적 플레이어 위치 사용
         
         // 몬스터의 실제 위치로 타깃 설정
         let targetX, targetY;
@@ -583,14 +625,19 @@ class GameUseCase {
 
     createMeleeAttackOnBoss(damage) {
         const canvas = document.getElementById('gameCanvas');
-        const startX = canvas.width * 0.2 + 20;
-        const startY = canvas.height * 0.7;
-        const targetX = canvas.width * 0.7;
-        const targetY = canvas.height * 0.6;
+        const startX = canvas.width * this.playerPosition.x + 20; // 동적 플레이어 위치 사용
+        const startY = canvas.height * this.playerPosition.y; // 동적 플레이어 위치 사용
+        const targetX = canvas.width * 0.65;
+        const targetY = canvas.height * 0.5;
 
         // 광선검은 훨씬 빠른 속도 (근접 공격이므로)
         const projectile = new Projectile(startX, startY, targetX, targetY, damage, 'lightsaber', 25);
         this.projectiles.push(projectile);
+        
+        // 치명타 시 특별한 알림
+        if (isCritical) {
+            showNotification(`Critical Hit! ${damage} damage!`, 'success');
+        }
     }
 
     createPlayerProjectileForBoss(damage, isCritical = false) {
@@ -713,15 +760,32 @@ class GameUseCase {
     
     // 실제 근접 공격 수행 (즉시 데미지 + 이펙트)
     performMeleeAttack(damage, target) {
-        // 즉시 데미지 적용
+        if (!target) return;
+        
+        // 근접 공격 애니메이션 시작
+        this.startSaberSwingAnimation();
+        
+        // 데미지 적용
+        let isDead = false;
         if (target === this.currentBoss) {
-            this.dealDamageToBoss(damage);
-        } else if (target === this.currentMonster) {
-            this.dealDamageToMonster(damage);
+            isDead = this.dealDamageToBoss(damage);
+        } else {
+            isDead = this.dealDamageToMonster(damage);
         }
         
-        // 근접 공격 이펙트 표시
+        // 근접 공격 이펙트
         this.showMeleeEffect(target);
+        
+        return isDead;
+    }
+    
+    // 광선검 휘두르기 애니메이션 시작
+    startSaberSwingAnimation() {
+        this.saberSwingAnimation = {
+            startTime: Date.now(),
+            duration: 400, // 0.4초 동안
+            active: true
+        };
     }
     
     // 근접 공격 이펙트 표시
@@ -749,41 +813,48 @@ class GameUseCase {
     // 플레이어 자동 이동 업데이트
     updatePlayerMovement() {
         let target = this.currentBoss || this.currentMonster;
-        if (!target) return;
-        
-        // 타겟의 위치 계산
-        let targetX, targetY;
-        if (target === this.currentBoss) {
-            targetX = 0.7;
-            targetY = 0.6;
+        if (!target) {
+            // 타겟이 없으면 중앙으로 복귀
+            this.playerPosition.targetX = 0.5;
+            this.playerPosition.targetY = 0.5;
         } else {
-            targetX = target.positionX;
-            targetY = target.positionY;
-        }
-        
-        // 광선검이 있고 근접 공격이 불가능한 경우 타겟에게 이동
-        if (this.player.equipment.lightsaber && !this.canUseMeleeAttack(target)) {
-            // 타겟으로부터 근접 공격 범위 내의 위치를 목표로 설정
-            const dx = targetX - this.playerPosition.x;
-            const dy = targetY - this.playerPosition.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 0.15) { // 화면 비율 기준 거리
-                // 타겟 방향으로 이동
-                this.playerPosition.targetX = targetX - (dx / distance) * 0.12; // 근접 거리 유지
-                this.playerPosition.targetY = targetY - (dy / distance) * 0.12;
+            // 타겟의 위치 계산
+            let targetX, targetY;
+            if (target === this.currentBoss) {
+                targetX = 0.65; // 보스 위치
+                targetY = 0.5;
+            } else {
+                targetX = target.positionX;
+                targetY = target.positionY;
             }
-        } else {
-            // 기본 위치로 복귀
-            this.playerPosition.targetX = 0.2;
-            this.playerPosition.targetY = 0.7;
+            
+            // 근접 무기 선택 시에만 몬스터에게 접근
+            if (this.player.selectedWeaponType === 'melee' && this.player.equipment.lightsaber) {
+                const dx = targetX - this.playerPosition.x;
+                const dy = targetY - this.playerPosition.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0.15) { // 근접 공격 범위 밖이면 접근
+                    // 타겟 방향으로 접근 (적당한 거리 유지)
+                    this.playerPosition.targetX = targetX - (dx / distance) * 0.12;
+                    this.playerPosition.targetY = targetY - (dy / distance) * 0.12;
+                } else {
+                    // 근접 범위 내에 있으면 현재 위치 유지
+                    this.playerPosition.targetX = this.playerPosition.x;
+                    this.playerPosition.targetY = this.playerPosition.y;
+                }
+            } else {
+                // 원거리 무기이거나 근접 무기가 없으면 중앙 위치 유지
+                this.playerPosition.targetX = 0.5;
+                this.playerPosition.targetY = 0.5;
+            }
         }
         
         // 현재 위치에서 목표 위치로 부드럽게 이동
         const moveX = this.playerPosition.targetX - this.playerPosition.x;
         const moveY = this.playerPosition.targetY - this.playerPosition.y;
         
-        this.playerPosition.x += moveX * this.playerPosition.moveSpeed * 60; // 60fps 기준
+        this.playerPosition.x += moveX * this.playerPosition.moveSpeed * 60; // 120fps에서 60fps로 변경 (절반으로 느리게)
         this.playerPosition.y += moveY * this.playerPosition.moveSpeed * 60;
     }
     
@@ -1156,45 +1227,22 @@ class GameUseCase {
     
     // 스킬 이펙트 업데이트
     updateSkillEffects() {
-        const now = Date.now();
+        if (!this.skillEffects) this.skillEffects = [];
         
-        // 행성파괴 레이저 업데이트
-        if (this.planetDestroyerEffect && this.planetDestroyerEffect.active) {
-            const effect = this.planetDestroyerEffect;
-            const elapsed = now - effect.startTime;
-            
-            if (effect.phase === 'charge' && elapsed >= effect.chargeTime) {
-                effect.phase = 'fire';
-                effect.fireStartTime = now;
-            } else if (effect.phase === 'fire' && elapsed >= effect.chargeTime + effect.fireTime) {
-                effect.phase = 'impact';
-                
-                // 데미지 적용
-                if (effect.target === this.currentBoss) {
-                    const isDead = this.dealDamageToBoss(effect.damage);
-                    if (isDead) {
-                        this.createPlanetCrackEffect();
-                    }
-                } else if (effect.target === this.currentMonster) {
-                    const isDead = this.dealDamageToMonster(effect.damage);
-                    if (isDead) {
-                        this.createPlanetCrackEffect();
-                    }
-                }
-                
-                effect.impactTime = now;
-            } else if (effect.phase === 'impact' && elapsed >= effect.chargeTime + effect.fireTime + 2000) {
-                this.planetDestroyerEffect = null; // 2초 더 길게 표시
-            }
-        }
+        this.skillEffects = this.skillEffects.filter(effect => {
+            const elapsed = Date.now() - effect.startTime;
+            return elapsed < effect.duration;
+        });
+    }
+    
+    updateMissTexts() {
+        if (!this.missTexts) this.missTexts = [];
         
-        // 방어막 이펙트 업데이트
-        if (this.shieldEffect && this.shieldEffect.active) {
-            const elapsed = now - this.shieldEffect.startTime;
-            if (elapsed >= this.shieldEffect.duration) {
-                this.shieldEffect = null;
-            }
-        }
+        // 오래된 Miss 텍스트 제거
+        this.missTexts = this.missTexts.filter(missText => {
+            const elapsed = Date.now() - missText.startTime;
+            return elapsed < missText.duration;
+        });
     }
     
     // 행성 갈라짐 이펙트
@@ -1256,7 +1304,7 @@ class GameUseCase {
         // 몸통박치기 애니메이션 데이터
         this.bodySlamAnimation = {
             startTime: Date.now(),
-            duration: 2000, // 2초 동안
+            duration: 1000, // 2초에서 1초로 변경 (2배 빠르게)
             phase: 'rush', // rush -> impact -> return
             originalX: originalX,
             originalY: originalY,
@@ -1268,7 +1316,7 @@ class GameUseCase {
             active: true
         };
         
-        // 고정 데미지 5 (1초 후 적용)
+        // 고정 데미지 5 (0.5초 후 적용으로 변경)
         setTimeout(() => {
             if (target === this.currentBoss) {
                 this.dealDamageToBoss(5);
@@ -1278,7 +1326,7 @@ class GameUseCase {
             
             // 넉백 효과 시작
             this.createKnockbackEffect(target);
-        }, 1000); // 1초 후 데미지 적용
+        }, 500); // 1초에서 0.5초로 변경 (2배 빠르게)
     }
     
     // 넉백 효과
@@ -1321,25 +1369,38 @@ class GameUseCase {
         }
         
         // 단계별 애니메이션
-        if (elapsed < 1000) {
-            // 0-1초: 돌진 단계
-            const rushProgress = elapsed / 1000;
+        if (elapsed < 500) {
+            // 0-0.5초: 돌진 단계 (1초에서 0.5초로 변경)
+            const rushProgress = elapsed / 500; // 1000에서 500으로 변경
             const easeOut = 1 - Math.pow(1 - rushProgress, 3); // 감속 곡선
             
             animation.currentX = animation.originalX + (animation.targetX - animation.originalX) * easeOut;
             animation.currentY = animation.originalY + (animation.targetY - animation.originalY) * easeOut;
             animation.phase = 'rush';
-        } else if (elapsed < 1200) {
-            // 1-1.2초: 충격 단계
+        } else if (elapsed < 600) {
+            // 0.5-0.6초: 충격 단계 (1-1.2초에서 0.5-0.6초로 변경)
             animation.phase = 'impact';
         } else {
-            // 1.2-2초: 복귀 단계
-            const returnProgress = (elapsed - 1200) / 800;
+            // 0.6-1초: 복귀 단계 (1.2-2초에서 0.6-1초로 변경)
+            const returnProgress = (elapsed - 600) / 400; // (elapsed - 1200) / 800에서 (elapsed - 600) / 400으로 변경
             const easeIn = Math.pow(returnProgress, 2); // 가속 곡선
             
             animation.currentX = animation.targetX + (animation.originalX - animation.targetX) * easeIn;
             animation.currentY = animation.targetY + (animation.originalY - animation.targetY) * easeIn;
             animation.phase = 'return';
+        }
+    }
+    
+    // 광선검 휘두르기 애니메이션 업데이트
+    updateSaberSwingAnimation() {
+        if (!this.saberSwingAnimation || !this.saberSwingAnimation.active) return;
+        
+        const animation = this.saberSwingAnimation;
+        const elapsed = Date.now() - animation.startTime;
+        
+        if (elapsed >= animation.duration) {
+            // 애니메이션 종료
+            this.saberSwingAnimation = null;
         }
     }
 }
@@ -1376,8 +1437,14 @@ function gameLoop() {
     // 스킬 이펙트 업데이트
     game.updateSkillEffects();
     
+    // Miss 텍스트 업데이트
+    game.updateMissTexts();
+    
     // 몸통박치기 애니메이션 업데이트
     game.updateBodySlamAnimation();
+    
+    // 광선검 휘두르기 애니메이션 업데이트
+    game.updateSaberSwingAnimation();
     
     // 몬스터 효과 업데이트
     if (game.currentMonster) {
@@ -1388,7 +1455,7 @@ function gameLoop() {
     }
     
     // 자동 전투 (0.3초마다 - 부드러운 전투)
-    if (Date.now() - game.lastAttackTime > 300) {
+    if (Date.now() - game.lastAttackTime > 600) { // 300ms에서 600ms로 변경 (공격속도를 절반으로)
         game.lastAttackTime = Date.now();
         let combatResult = false;
         if (game.currentBoss) {
