@@ -184,17 +184,17 @@ class SkillSystem {
 
 // 스킬 UI 업데이트 함수
 function updateSkillUI() {
-    if (!game || !game.skillSystem) return;
+    if (!window.game || !window.game.skillSystem) return;
     
     [1, 2, 3].forEach(skillId => {
         const skillBtn = document.getElementById(`skill${skillId}`);
         const cooldownSpan = document.getElementById(`skill${skillId}Cooldown`);
-        const skill = game.skillSystem.skills[skillId];
+        const skill = window.game.skillSystem.skills[skillId];
         
         if (!skillBtn || !cooldownSpan || !skill) return;
         
-        const canUse = game.skillSystem.canUseSkill(skillId, game.player);
-        const cooldownInfo = game.skillSystem.getCooldownInfo(skillId);
+        const canUse = window.game.skillSystem.canUseSkill(skillId, window.game.player);
+        const cooldownInfo = window.game.skillSystem.getCooldownInfo(skillId);
         
         // 버튼 활성화/비활성화
         skillBtn.disabled = !canUse;
@@ -203,11 +203,11 @@ function updateSkillUI() {
         if (!cooldownInfo.isReady) {
             cooldownSpan.textContent = cooldownInfo.remainingSeconds + 's';
             cooldownSpan.style.color = '#ff6666';
-        } else if (game.player.mp < skill.mpCost) {
+        } else if (window.game.player.mp < skill.mpCost) {
             cooldownSpan.textContent = 'No MP';
             cooldownSpan.style.color = '#3498db';
         } else {
-            cooldownSpan.textContent = 'Ready';
+            cooldownSpan.textContent = '';
             cooldownSpan.style.color = '#27ae60';
         }
     });

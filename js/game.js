@@ -1449,7 +1449,12 @@ class GameUseCase {
     
     // 스킬 사용
     useSkill(skillId) {
-        return this.skillSystem.useSkill(skillId, this.player, this);
+        const result = this.skillSystem.useSkill(skillId, this.player, this);
+        // 스킬 사용 후 즉시 UI 업데이트
+        if (typeof updateSkillUI === 'function') {
+            updateSkillUI();
+        }
+        return result;
     }
     
     // 스킬 투사체 생성 (미사일)
@@ -1868,6 +1873,9 @@ function startGameLoop() {
             if (typeof updateUI === 'function') {
                 updateUI();
             }
+            if (typeof updateSkillUI === 'function') {
+                updateSkillUI();
+            }
             window.game.lastUIUpdate = Date.now();
         }
     }, 16); // 60fps (16ms마다 실행)
@@ -2241,6 +2249,24 @@ function drawSkillEffects(ctx, canvas) {
         const elapsed = Date.now() - effect.startTime;
         const totalDuration = effect.chargeTime + effect.fireTime + 2000; // 8초 총 지속시간
         const progress = elapsed / totalDuration;
+        
+        // 페이즈 전환 로직
+        if (effect.phase === 'charge' && elapsed >= effect.chargeTime) {
+            effect.phase = 'fire';
+        } else if (effect.phase === 'fire' && elapsed >= effect.chargeTime + effect.fireTime) {
+            effect.phase = 'impact';
+            // 데미지 적용
+            if (effect.target) {
+                if (effect.target === window.game.currentBoss) {
+                    window.game.dealDamageToBoss(effect.damage);
+                } else {
+                    window.game.dealDamageToSpecificMonster(effect.target, effect.damage);
+                }
+            }
+        } else if (effect.phase === 'impact' && elapsed >= totalDuration) {
+            effect.active = false;
+            window.game.planetDestroyerEffect = null;
+        }
         
         drawPlanetDestroyerEffect(ctx, canvas, effect, progress);
     }
