@@ -1,7 +1,7 @@
 // KonamiCommand 클래스 - 히든 스킬 관련 로직
 class KonamiCommand {
     constructor() {
-        this.sequence = ['ArrowUp', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'Space'];
+        this.sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'Space'];
         this.inputSequence = [];
         this.lastInputTime = 0;
         this.cooldownTime = 10000; // 10초 쿨다운

@@ -30,8 +30,13 @@ function drawGame() {
     // 몬스터/보스 그리기
     if (game.currentBoss) {
         drawBoss(ctx, canvas);
-    } else if (game.currentMonster) {
-        drawMonster(ctx, canvas);
+    } else if (game.monsters && game.monsters.length > 0) {
+        // 모든 살아있는 몬스터들 그리기
+        game.monsters.forEach(monster => {
+            if (!monster.isDead) {
+                drawMonsterFromArray(ctx, canvas, monster);
+            }
+        });
     }
     
     // 투사체 그리기
@@ -263,11 +268,9 @@ function drawPlayer(ctx, canvas) {
     ctx.fillText(nickname, x, y + 40);
 }
 
-// 몬스터 그리기
-function drawMonster(ctx, canvas) {
-    if (!game.currentMonster) return;
-    
-    const monster = game.currentMonster;
+// 몬스터 그리기 (배열용)
+function drawMonsterFromArray(ctx, canvas, monster) {
+    if (!monster) return;
     
     // 넉백 효과 계산
     let x, y;
@@ -300,7 +303,7 @@ function drawMonster(ctx, canvas) {
     
     const baseY = canvas.height * monster.positionY + Math.sin(Date.now() * 0.004) * 8;
     y = baseY;
-    let size = (20 + monster.level * 2) * monster.scale;
+    let size = (35 + monster.level * 3) * monster.scale; // 크기를 더 크게 조정
     
     // 피격 효과 - 몬스터 흔들림
     if (monster.hitEffect) {

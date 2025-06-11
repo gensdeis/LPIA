@@ -12,9 +12,8 @@ function selectWeaponType(weaponType) {
         if (typeof showNotification === 'function') {
             showNotification('근접 무기가 장착되어 있지 않습니다!', 'error');
         }
-        // 라디오 버튼 체크 해제
-        const meleeRadio = document.getElementById('meleeWeapon');
-        if (meleeRadio) meleeRadio.checked = false;
+        // 이전 선택 상태로 복원
+        setTimeout(() => updateWeaponSelectorUI(), 10);
         return;
     }
     
@@ -22,21 +21,15 @@ function selectWeaponType(weaponType) {
         if (typeof showNotification === 'function') {
             showNotification('원거리 무기가 장착되어 있지 않습니다!', 'error');
         }
-        // 라디오 버튼 체크 해제
-        const rangedRadio = document.getElementById('rangedWeapon');
-        if (rangedRadio) rangedRadio.checked = false;
+        // 이전 선택 상태로 복원
+        setTimeout(() => updateWeaponSelectorUI(), 10);
         return;
     }
     
     // 임시로 선택된 무기 타입 저장
     tempSelectedWeaponType = weaponType;
     
-    // 라디오 버튼 수동 업데이트
-    const meleeRadio = document.getElementById('meleeWeapon');
-    const rangedRadio = document.getElementById('rangedWeapon');
-    
-    if (meleeRadio) meleeRadio.checked = (weaponType === 'melee');
-    if (rangedRadio) rangedRadio.checked = (weaponType === 'ranged');
+    console.log('Selected weapon type:', weaponType); // 디버깅용
     
     // UI 업데이트 (시각적 선택 상태)
     updateWeaponSelectorUI();
@@ -224,6 +217,6 @@ function showWeaponSelector() {
         tempSelectedWeaponType = game.player.selectedWeaponType;
     }
     
-    // UI 업데이트
-    updateWeaponSelector();
+    // UI 업데이트 (하지만 updateWeaponSelector 대신 updateWeaponSelectorUI 사용)
+    updateWeaponSelectorUI();
 } 

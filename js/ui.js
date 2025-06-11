@@ -1,47 +1,9 @@
 // UI 관련 함수들 - 알림, 모달, UI 업데이트 등
 
 // 알림 메시지 표시
+// showNotification 함수 - 토스트 메시지 비활성화
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#4a90e2'};
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: bold;
-        z-index: 2000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        animation: fadeInOut 3s ease-in-out forwards;
-    `;
-    notification.textContent = message;
-    
-    // CSS 애니메이션 추가
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-            20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-        if (style.parentNode) {
-            style.parentNode.removeChild(style);
-        }
-    }, 3000);
+    // 토스트 메시지 비활성화됨
 }
 
 // 데미지 숫자 표시
@@ -71,13 +33,23 @@ function updateUI() {
     if (playerLevel) playerLevel.textContent = game.player.level;
     
     const hpText = document.getElementById('hpText');
-    if (hpText) hpText.textContent = `${Math.max(0, game.player.hp)}/${game.player.maxHp}`;
+    if (hpText) {
+        const hp = Math.max(0, game.player.hp || 0);
+        const maxHp = game.player.maxHp || 100;
+        const hpPercent = maxHp > 0 ? Math.floor((hp / maxHp) * 100) : 0;
+        hpText.textContent = `${hp}/${maxHp} (${hpPercent}%)`;
+    }
     
     const mpText = document.getElementById('mpText');
-    if (mpText) mpText.textContent = `${Math.max(0, game.player.mp)}/${game.player.maxMp}`;
+    if (mpText) {
+        const mp = Math.max(0, game.player.mp || 0);
+        const maxMp = game.player.maxMp || 100;
+        const mpPercent = maxMp > 0 ? Math.floor((mp / maxMp) * 100) : 0;
+        mpText.textContent = `${mp}/${maxMp} (${mpPercent}%)`;
+    }
     
     const playerGold = document.getElementById('playerGold');
-    if (playerGold) playerGold.textContent = game.player.gold;
+    if (playerGold) playerGold.textContent = game.player.gold || 0;
     
     const playerPower = document.getElementById('playerPower');
     if (playerPower) playerPower.textContent = game.player.getTotalPower();
@@ -100,19 +72,28 @@ function updateUI() {
     }
     
     // HP/MP 바 업데이트
-    const hpPercent = (game.player.hp / game.player.maxHp) * 100;
-    const mpPercent = (game.player.mp / game.player.maxMp) * 100;
+    const hp = Math.max(0, game.player.hp || 0);
+    const maxHp = game.player.maxHp || 100;
+    const mp = Math.max(0, game.player.mp || 0);
+    const maxMp = game.player.maxMp || 100;
+    
+    const hpPercent = maxHp > 0 ? (hp / maxHp) * 100 : 0;
+    const mpPercent = maxMp > 0 ? (mp / maxMp) * 100 : 0;
+    
     const hpBar = document.getElementById('hpBar');
     const mpBar = document.getElementById('mpBar');
     if (hpBar) hpBar.style.width = hpPercent + '%';
     if (mpBar) mpBar.style.width = mpPercent + '%';
     
     // 경험치 바 업데이트
-    const expPercent = (game.player.experience / game.player.experienceToNext) * 100;
+    const experience = game.player.experience || 0;
+    const experienceToNext = game.player.experienceToNext || 100;
+    const expPercent = experienceToNext > 0 ? (experience / experienceToNext) * 100 : 0;
+    
     const expBar = document.getElementById('expBar');
     const expText = document.getElementById('expText');
     if (expBar) expBar.style.width = expPercent + '%';
-    if (expText) expText.textContent = `${game.player.experience}/${game.player.experienceToNext} (${expPercent.toFixed(0)}%)`;
+    if (expText) expText.textContent = `${experience}/${experienceToNext} (${expPercent.toFixed(0)}%)`;
     
     // 퀘스트 업데이트
     updateQuestUI();
@@ -154,9 +135,10 @@ function updateUI() {
         updateSkillUI();
     }
     
-    // 무기 선택 UI 업데이트
-    if (typeof updateWeaponSelector === 'function') {
-        updateWeaponSelector();
+    // 무기 선택 UI 업데이트 (패널이 열려있을 때만)
+    const weaponSelector = document.getElementById('weaponSelector');
+    if (weaponSelector && weaponSelector.style.display !== 'none' && typeof updateWeaponSelectorUI === 'function') {
+        updateWeaponSelectorUI();
     }
 }
 
@@ -379,7 +361,7 @@ function usePotion(type) {
 function toggleAutoPotion() {
     const enabled = document.getElementById('autoPotionEnabled').checked;
     game.autoPotionSettings.enabled = enabled;
-    showNotification(`Auto Potion ${enabled ? 'Enabled' : 'Disabled'}`, 'info');
+    // Auto potion notification removed
 }
 
 function updateAutoPotionPercent(value) {
@@ -390,5 +372,5 @@ function updateAutoPotionPercent(value) {
 function updateAutoPotionPriority() {
     const priority = document.getElementById('autoPotionPriority').value;
     game.autoPotionSettings.priority = priority.split(',');
-    showNotification(`Priority updated: ${priority.replace(/,/g, ' → ')}`, 'info');
+    // Priority update notification removed
 }

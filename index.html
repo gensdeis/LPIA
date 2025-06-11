@@ -413,6 +413,21 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
+        <!-- 버전 표시 -->
+        <div id="gameVersion" style="
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 1000;
+        ">v0.0.5</div>
+        
         <div id="ui">
             <!-- 플레이어 상태 패널 -->
             <div id="playerStats" class="ui-panel">
@@ -456,7 +471,7 @@
                         </button>
                     </div>
                     <div style="font-size: 11px; color: #888; margin-top: 8px;">
-                        💡 숨겨진 스킬: ↑ ↑ ↓ ↓ Space
+    
                     </div>
                 </div>
                 
@@ -520,15 +535,15 @@
             <!-- 무기 선택 패널 -->
             <div id="weaponSelector" class="ui-panel" style="display: none;">
                 <h3>무기 선택</h3>
-                <div class="weapon-choice" onclick="selectWeaponType('melee')">
-                    <input type="radio" name="weaponType" value="melee" id="meleeWeapon">
+                <div class="weapon-choice">
+                    <input type="radio" name="weaponType" value="melee" id="meleeWeapon" onclick="selectWeaponType('melee')">
                     <label for="meleeWeapon">⚔️ 근접 무기 (광선검)</label>
                     <div class="weapon-stats">
                         <div>데미지, 근접거리</div>
                     </div>
                 </div>
-                <div class="weapon-choice" onclick="selectWeaponType('ranged')">
-                    <input type="radio" name="weaponType" value="ranged" id="rangedWeapon">
+                <div class="weapon-choice">
+                    <input type="radio" name="weaponType" value="ranged" id="rangedWeapon" onclick="selectWeaponType('ranged')">
                     <label for="rangedWeapon">🔫 원거리 무기 (레이저총)</label>
                     <div class="weapon-stats">
                         <div>명중률: <span id="rangedAccuracy">70%</span></div>

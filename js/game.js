@@ -3,9 +3,11 @@
 class GameUseCase {
     constructor() {
         this.player = new Player();
-        this.currentMonster = null;
+        this.monsters = []; // 다중 몬스터 지원
         this.currentBoss = null;
         this.stage = 1;
+        this.lastMonsterSpawn = Date.now();
+        this.monsterSpawnInterval = 1000; // 1초마다 스폰
         this.quests = [];
         this.planetNames = [
             '작은 행성', '꽃의 행성', '왕의 행성', '사업가의 행성', '가로등의 행성',
@@ -17,7 +19,6 @@ class GameUseCase {
         ];
         
         this.initializeQuests();
-        this.spawnMonster();
         this.giveStarterEquipment();
         
         // 투사체 시스템
@@ -153,9 +154,52 @@ class GameUseCase {
     }
 
     spawnMonster() {
+        // 보스가 있으면 몬스터 스폰하지 않음
+        if (this.currentBoss) return;
+        
+        // 최대 5마리까지만 스폰
+        if (this.monsters.length >= 5) return;
+        
         const monsterLevel = Math.max(1, this.stage - Math.floor(Math.random() * 3));
         const monsterName = this.monsterNames[Math.floor(Math.random() * this.monsterNames.length)];
-        this.currentMonster = new Monster(monsterName, monsterLevel, this.stage);
+        const newMonster = new Monster(monsterName, monsterLevel, this.stage);
+        
+        // 공격 타입 랜덤 선택 (근접/원거리)
+        newMonster.attackType = Math.random() < 0.5 ? 'melee' : 'ranged';
+        
+        // 위치 분산
+        newMonster.positionX = 0.6 + Math.random() * 0.3; // 0.6 ~ 0.9
+        newMonster.positionY = 0.3 + Math.random() * 0.4; // 0.3 ~ 0.7
+        newMonster.scale = 1;
+        newMonster.alpha = 1;
+        
+        this.monsters.push(newMonster);
+        
+        // 첫 번째 몬스터를 현재 몬스터로 설정 (UI 표시용)
+        if (!this.currentMonster || this.currentMonster.isDead) {
+            this.currentMonster = newMonster;
+        }
+    }
+    
+    // 몬스터 스폰 시스템 업데이트
+    updateMonsterSpawning() {
+        const now = Date.now();
+        if (now - this.lastMonsterSpawn > this.monsterSpawnInterval) {
+            this.spawnMonster();
+            this.lastMonsterSpawn = now;
+        }
+        
+        // 죽은 몬스터 제거
+        this.monsters = this.monsters.filter(monster => {
+            if (monster.isDead && Date.now() - monster.deathTime > 500) {
+                // 현재 몬스터가 제거되는 경우 다른 몬스터로 교체
+                if (this.currentMonster === monster) {
+                    this.currentMonster = this.monsters.find(m => m !== monster && !m.isDead) || null;
+                }
+                return false; // 제거
+            }
+            return true; // 유지
+        });
     }
 
     spawnBoss() {
@@ -200,6 +244,11 @@ class GameUseCase {
     }
 
     attackMonster() {
+        // 현재 타깃이 없으면 첫 번째 살아있는 몬스터를 선택
+        if (!this.currentMonster || this.currentMonster.isDead) {
+            this.currentMonster = this.monsters.find(monster => !monster.isDead) || null;
+        }
+        
         if (!this.currentMonster || this.currentMonster.deathAnimation) return false;
 
         // 플레이어 공격
@@ -370,15 +419,19 @@ class GameUseCase {
         const isDead = this.currentMonster.takeDamage(damage);
 
         if (isDead) {
+            // 죽은 몬스터 정보를 로컬 변수에 저장 (레이스 컨디션 방지)
+            const deadMonster = this.currentMonster;
+            
             // 사망 애니메이션이 끝난 후 몬스터 처리
             setTimeout(() => {
-                this.player.gainExperience(this.currentMonster.expReward);
-                this.player.gold += this.currentMonster.goldReward;
+                // 저장된 몬스터 참조 사용
+                this.player.gainExperience(deadMonster.experience);
+                this.player.gold += deadMonster.gold;
                 
                 // 퀘스트 업데이트
                 this.updateQuest('kill', 1);
-                this.updateQuest('gold', this.currentMonster.goldReward);
-                this.updateQuest('exp', this.currentMonster.expReward);
+                this.updateQuest('gold', deadMonster.gold);
+                this.updateQuest('exp', deadMonster.experience);
 
                 // 장비 드롭 확률
                 if (Math.random() < 0.3) {
@@ -390,6 +443,10 @@ class GameUseCase {
                     this.dropHealthPotion(false);
                 }
 
+                // 현재 몬스터 제거
+                this.currentMonster = null;
+                
+                // 새 몬스터 스폰
                 this.spawnMonster();
             }, 500); // 사망 애니메이션 시간과 동일
         }
@@ -594,10 +651,14 @@ class GameUseCase {
         const isDead = this.currentBoss.takeDamage(damage);
 
         if (isDead) {
-                            // 보스 사망 애니메이션이 끝난 후 처리
+            // 죽은 보스 정보를 로컬 변수에 저장 (레이스 컨디션 방지)
+            const deadBoss = this.currentBoss;
+            
+            // 보스 사망 애니메이션이 끝난 후 처리
             setTimeout(() => {
-                this.player.gainExperience(this.currentBoss.expReward);
-                this.player.gold += this.currentBoss.goldReward;
+                // 저장된 보스 참조 사용
+                this.player.gainExperience(deadBoss.experience);
+                this.player.gold += deadBoss.gold;
                 
                 // 보스 클리어 시 다음 스테이지
                 this.stage++;
@@ -1294,6 +1355,9 @@ let gameRunning = false;
 function gameLoop() {
     if (!gameRunning) return;
     
+    // 몬스터 스폰 시스템 업데이트
+    game.updateMonsterSpawning();
+    
     // 자동 보스 도전 체크
     game.checkAutoChallengeBoss();
     
@@ -1959,10 +2023,7 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// 게임 시작
-window.addEventListener('load', () => {
-    initGame();
-});
+// 게임 시작은 캐릭터 생성 후에만 수행됨
 
 
 // 기존 모달 이벤트는 아래 계정 시스템에서 통합 관리됨 
@@ -1990,8 +2051,8 @@ document.addEventListener('click', (e) => {
 window.initGame = function initGame() {
     window.game = game = new GameUseCase();
     
-    // 코나미 커맨드 초기화
-    const konamiCommand = new KonamiCommand();
+    // 코나미 커맨드 초기화 (게임 인스턴스에 저장)
+    game.konamiCommand = new KonamiCommand();
     
     game.loadGame();
     

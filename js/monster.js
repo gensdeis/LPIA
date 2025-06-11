@@ -43,6 +43,8 @@ class Monster {
     startDeathAnimation() {
         this.isDead = true;
         this.deathTimer = Date.now();
+        this.deathAnimation = true;
+        this.deathTime = Date.now();
     }
     
     updateEffects() {
@@ -82,9 +84,12 @@ class Monster {
     performAttack() {
         if (this.canAttack()) {
             this.lastAttackTime = Date.now();
-            return this.attack;
+            return {
+                damage: this.attack,
+                type: this.attackType || 'melee'
+            };
         }
-        return 0;
+        return { damage: 0, type: 'none' };
     }
 }
 
