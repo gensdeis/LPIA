@@ -525,13 +525,23 @@ body {
 #version {
     position: fixed;
     bottom: 10px;
-    right: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     color: rgba(255,255,255,0.5);
     font-size: 12px;
     z-index: 1000;
+    text-align: center;
 }
 
 /* Responsive Design */
+@media (max-width: 1400px) {
+    #ui {
+        grid-template-columns: minmax(170px, 280px) 1fr minmax(170px, 280px);
+        gap: 18px;
+        padding: 18px;
+    }
+}
+
 @media (max-width: 1200px) {
     #ui {
         grid-template-columns: minmax(160px, 250px) 1fr minmax(160px, 250px);
@@ -540,13 +550,27 @@ body {
     }
 }
 
+@media (max-width: 1024px) {
+    #ui {
+        grid-template-columns: minmax(150px, 220px) 1fr minmax(150px, 220px);
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .ui-panel {
+        padding: 9px;
+        font-size: 13px;
+    }
+}
+
 @media (max-width: 768px) {
     #ui {
         grid-template-areas: 
             "stats      quest"
-            "weapon     ."
-            "inventory  stage";
-        grid-template-columns: minmax(140px, 200px) minmax(140px, 200px);
+            "weapon     inventory"
+            ".          stage";
+        grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr);
+        grid-template-rows: auto auto auto;
         gap: 10px;
         padding: 10px;
     }
@@ -563,10 +587,6 @@ body {
     #inventoryToggle {
         width: 25px;
         height: 50px;
-    }
-    
-    #inventoryToggle.collapsed {
-        left: 5px;
     }
     
     .toggle-arrow {
@@ -587,6 +607,51 @@ body {
         width: 60px;
         height: 60px;
     }
+    
+    #version {
+        font-size: 11px;
+        bottom: 5px;
+    }
+}
+
+@media (max-width: 620px) {
+    #ui {
+        grid-template-areas: 
+            "stats    quest"
+            "weapon   inventory"
+            "stage    stage";
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .ui-panel {
+        padding: 7px;
+        font-size: 11px;
+    }
+    
+    #inventoryToggle {
+        width: 22px;
+        height: 45px;
+    }
+    
+    .skill-btn {
+        padding: 5px 7px;
+        font-size: 10px;
+        min-width: 35px;
+    }
+    
+    .potion-btn {
+        padding: 5px 7px;
+        font-size: 10px;
+        min-width: 35px;
+    }
+    
+    #version {
+        font-size: 10px;
+        bottom: 3px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -599,13 +664,13 @@ body {
             "stage";
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto auto auto;
-        gap: 8px;
-        padding: 8px;
+        gap: 6px;
+        padding: 6px;
     }
     
     .ui-panel {
         padding: 6px;
-        font-size: 11px;
+        font-size: 10px;
     }
     
     #inventoryToggle {
@@ -613,41 +678,93 @@ body {
         height: 40px;
     }
     
-    #inventoryToggle.collapsed {
-        left: 3px;
-    }
-    
     .skill-btn {
-        padding: 6px 8px;
-        font-size: 10px;
-        min-width: 40px;
+        padding: 4px 6px;
+        font-size: 9px;
+        min-width: 30px;
     }
     
     .potion-btn {
-        padding: 6px 8px;
-        font-size: 10px;
-        min-width: 40px;
+        padding: 4px 6px;
+        font-size: 9px;
+        min-width: 30px;
     }
     
     .equipment-row {
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 3px;
     }
     
     .equipment-category {
         width: 100%;
-        font-size: 10px;
+        font-size: 9px;
+    }
+    
+    .equipment-slot {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    #version {
+        font-size: 9px;
+        bottom: 2px;
+    }
+}
+
+@media (max-width: 360px) {
+    #ui {
+        gap: 4px;
+        padding: 4px;
+    }
+    
+    .ui-panel {
+        padding: 4px;
+        font-size: 9px;
+    }
+    
+    .ui-panel h3 {
+        font-size: 12px;
+        margin: 0 0 5px 0;
+    }
+    
+    .skill-btn {
+        padding: 3px 5px;
+        font-size: 8px;
+        min-width: 25px;
+    }
+    
+    .potion-btn {
+        padding: 3px 5px;
+        font-size: 8px;
+        min-width: 25px;
+    }
+    
+    .equipment-slot {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    
+    #inventoryToggle {
+        width: 18px;
+        height: 35px;
+    }
+    
+    #version {
+        font-size: 8px;
+        bottom: 1px;
     }
 }
 
 @media (max-height: 600px) {
     #ui {
-        gap: 8px;
-        padding: 8px;
+        gap: 6px;
+        padding: 6px;
     }
     
     .ui-panel {
-        padding: 6px;
+        padding: 5px;
     }
     
     .stat-bar {
@@ -655,8 +772,34 @@ body {
     }
     
     .skill-btn, .potion-btn {
-        padding: 4px 6px;
-        font-size: 10px;
+        padding: 3px 5px;
+        font-size: 9px;
+        margin: 1px;
+    }
+}
+
+@media (max-height: 500px) {
+    #ui {
+        gap: 4px;
+        padding: 4px;
+    }
+    
+    .ui-panel {
+        padding: 4px;
+    }
+    
+    .ui-panel h3 {
+        font-size: 12px;
+        margin: 0 0 3px 0;
+    }
+    
+    .stat-bar {
+        height: 14px;
+    }
+    
+    .skill-btn, .potion-btn {
+        padding: 2px 4px;
+        font-size: 8px;
         margin: 1px;
     }
 }
