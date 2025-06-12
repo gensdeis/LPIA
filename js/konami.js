@@ -29,8 +29,8 @@ class KonamiCommand {
             
             const now = Date.now();
             
-            // 마지막 입력으로부터 2초가 지나면 시퀀스 초기화
-            if (now - this.lastInputTime > 2000) {
+            // 마지막 입력으로부터 0.5초가 지나면 시퀀스 초기화
+            if (now - this.lastInputTime > 500) {
                 this.inputSequence = [];
             }
             
