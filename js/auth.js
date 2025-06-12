@@ -293,8 +293,10 @@ function showCharacterModal() {
     console.log('Character modal element:', modal); // 디버깅용
     
     if (modal) {
+        // hidden 클래스 제거 (CSS의 !important보다 우선하도록)
+        modal.classList.remove('hidden');
         modal.style.display = 'flex';
-        console.log('Character modal display set to flex'); // 디버깅용
+        console.log('Character modal display set to flex and hidden class removed'); // 디버깅용
     } else {
         console.error('Character modal element not found!'); // 디버깅용
         return;
@@ -312,7 +314,10 @@ function showCharacterModal() {
 function closeCharacterModal(skipGameLoad = false) {
     console.log('closeCharacterModal called with skipGameLoad:', skipGameLoad); // 디버깅용
     
-    document.getElementById('characterModal').style.display = 'none';
+    const modal = document.getElementById('characterModal');
+    modal.style.display = 'none';
+    modal.classList.add('hidden'); // hidden 클래스 다시 추가
+    
     document.getElementById('characterNickname').value = '';
     document.getElementById('characterMessage').textContent = '';
     
@@ -322,7 +327,7 @@ function closeCharacterModal(skipGameLoad = false) {
     document.getElementById('equipmentColor').removeEventListener('input', updateCharacterPreview);
     
     // skipGameLoad가 true면 게임 데이터 로드하지 않음 (캐릭터 생성 후 호출시)
-    if (!skipGameLoad && currentUser && game && game.player) {
+    if (!skipGameLoad && currentUser && window.game && window.game.player) {
         console.log('Loading user game data after modal close'); // 디버깅용
         // 기본 캐릭터 정보로 게임 시작
         loadUserGameData(currentUser);

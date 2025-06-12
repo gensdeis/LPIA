@@ -139,7 +139,7 @@ class GameUseCase {
                         quest.current = Math.min(this.getEquippedItemCount(), quest.target);
                         break;
                     case 5: // 레벨 퀘스트
-                        quest.current = Math.min(this.player.level, quest.target);
+                        quest.current = this.player.level; // 레벨은 그대로 설정 (타겟보다 높을 수도 있음)
                         break;
                 }
                 
@@ -1263,13 +1263,36 @@ class GameUseCase {
                 }
                 if (type === 'level' && quest.id === 5) {
                     // 레벨 퀘스트는 현재 레벨로 직접 설정
-                    quest.current = this.player.level;
+                    quest.current = amount; // 전달된 레벨 값 사용
                     if (quest.current >= quest.target) {
                         quest.completed = true;
+                        console.log(`Level quest completed! Current level: ${quest.current}, Target: ${quest.target}`);
+                        showNotification(`Level quest completed! Reached level ${quest.current}!`, 'success');
                     }
                 }
             }
         });
+    }
+
+    // 현재 레벨에 맞게 레벨 퀘스트 즉시 체크
+    forceUpdateLevelQuest() {
+        const levelQuest = this.quests.find(quest => quest.id === 5);
+        if (levelQuest && !levelQuest.completed) {
+            const currentLevel = this.player.level;
+            console.log(`Force updating level quest: Current level ${currentLevel}, Target ${levelQuest.target}`);
+            
+            if (currentLevel >= levelQuest.target) {
+                levelQuest.current = currentLevel;
+                levelQuest.completed = true;
+                console.log(`Level quest force completed! Current level: ${currentLevel}, Target: ${levelQuest.target}`);
+                showNotification(`Level quest completed! Reached level ${currentLevel}!`, 'success');
+                
+                // UI 업데이트
+                if (typeof updateUI === 'function') {
+                    updateUI();
+                }
+            }
+        }
     }
 
     canChallengeBoss() {
@@ -1371,6 +1394,9 @@ class GameUseCase {
             
             // 게임 로드 후 퀘스트 상태 체크 (레벨, 골드 등 현재 상태와 동기화)
             this.checkQuestStatus();
+            
+            // 레벨 퀘스트 강제 업데이트 (현재 레벨에 맞게)
+            this.forceUpdateLevelQuest();
             
             // 무기 선택 상태 확인 (로드 후)
             setTimeout(() => {

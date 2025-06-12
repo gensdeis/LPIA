@@ -114,8 +114,8 @@ class Player {
         this.baseDefense += defenseIncrease;
         
         // 레벨업 시 게임 시스템에 알림 (퀘스트 업데이트를 위해)
-        if (typeof game !== 'undefined' && game.updateQuest) {
-            game.updateQuest('level', this.level);
+        if (typeof window.game !== 'undefined' && window.game.updateQuest) {
+            window.game.updateQuest('level', this.level);
         }
         
         // 레벨업 알림 표시 (showNotification은 ui.js에서 정의)
